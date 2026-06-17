@@ -437,7 +437,7 @@ input:focus, textarea:focus, select:focus {
    ============================================================ */
 .rest-timer {
   position: fixed;
-  bottom: calc(var(--tab-height) + 12px + env(safe-area-inset-bottom));
+  top: calc(var(--header-height) + 8px);
   left: 50%; transform: translateX(-50%);
   background: var(--surface);
   border: 2px solid var(--accent);
@@ -445,11 +445,11 @@ input:focus, textarea:focus, select:focus {
   padding: var(--s2) var(--s5);
   display: flex; align-items: center; gap: var(--s3);
   box-shadow: var(--shadow-accent), var(--shadow-md);
-  z-index: 50; width: max-content;
+  z-index: 200; width: max-content;
   animation: timer-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes timer-in {
-  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  from { transform: translateX(-50%) translateY(-16px); opacity: 0; }
   to   { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 .rest-timer-time {
