@@ -2,6 +2,7 @@
   "name": "muscu-plan",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "npx vite@8 build",

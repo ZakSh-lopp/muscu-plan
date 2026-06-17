@@ -62,4 +62,9 @@ export const STORAGE_KEYS = {
   NOTIFICATIONS_SETUP: 'muscu_notifs_setup',
   HYDRATION_TODAY: 'muscu_hydration',
   STREAK: 'muscu_streak',
+
+  // Notes & état exercices
+  EXERCISE_NOTES: 'muscu_ex_notes',
+  DISABLED_EXERCISES: 'muscu_disabled_ex',
+  SWAPPED_EXERCISES: 'muscu_swapped_ex',
 };

@@ -7,6 +7,8 @@ export default defineConfig({
     outDir: 'dist',
     // Important pour Capacitor : pas de hash dans les noms de fichiers
     rollupOptions: {
+      // Capacitor packages are provided at runtime by the native layer — don't bundle them
+      external: (id) => id.startsWith('@capacitor/'),
       output: {
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',

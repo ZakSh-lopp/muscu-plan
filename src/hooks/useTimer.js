@@ -1,5 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useStorage, STORAGE_KEYS } from './useStorage';
+
+async function vibrateEnd() {
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    if (!Capacitor.isNativePlatform()) return;
+    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+    // Triple pulse pour signaler la fin du repos
+    await Haptics.impact({ style: ImpactStyle.Heavy });
+    await new Promise(r => setTimeout(r, 150));
+    await Haptics.impact({ style: ImpactStyle.Heavy });
+    await new Promise(r => setTimeout(r, 150));
+    await Haptics.impact({ style: ImpactStyle.Medium });
+  } catch (e) { /* silently ignore on web */ }
+}
 
 /**
  * Timer de séance — basé sur timestamp absolu.
@@ -49,14 +63,20 @@ export function useRestTimer() {
   const [endTs, setEndTs] = useStorage(STORAGE_KEYS.REST_TIMER_END, null);
   const [remaining, setRemaining] = useState(0);
   const [active, setActive] = useState(false);
+  const vibratedRef = useRef(false);
 
   useEffect(() => {
-    if (!endTs) { setRemaining(0); setActive(false); return; }
+    if (!endTs) { setRemaining(0); setActive(false); vibratedRef.current = false; return; }
+    vibratedRef.current = false;
     const tick = () => {
       const rem = Math.max(0, Math.ceil((endTs - Date.now()) / 1000));
       setRemaining(rem);
       setActive(rem > 0);
-      if (rem === 0) setEndTs(null);
+      if (rem === 0 && !vibratedRef.current) {
+        vibratedRef.current = true;
+        vibrateEnd();
+        setEndTs(null);
+      }
     };
     tick();
     const id = setInterval(tick, 500);

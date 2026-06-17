@@ -2,10 +2,15 @@ import { useState } from 'react';
 import { WORKOUT_TYPES } from '../../data/workout';
 import { useSessionTimer, useRestTimer } from '../../hooks/useTimer';
 import { getTodayWorkoutType } from '../../hooks/useWorkout';
+import { useCoach } from '../../hooks/useCoach';
+import { useNotifications } from '../../hooks/useNotifications';
+import { useStorage, STORAGE_KEYS } from '../../hooks/useStorage';
 import ExerciseCard from './ExerciseCard';
 import SupplementTracker from './SupplementTracker';
 import WeightTracker from './WeightTracker';
 import PlateCalculator from './PlateCalculator';
+import GuidedSessionView from './GuidedSessionView';
+import CoachCard from './CoachCard';
 
 function computeSummary(exercises, todaySession, duration, getPR) {
   let totalVolume = 0, totalSetsTarget = 0, totalSetsDone = 0;
@@ -48,25 +53,81 @@ function SessionSummary({ summary }) {
         Bilan de seance
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
-        <StatBox icon="⏱" label="Duree" value={summary.duration} />
-        <StatBox icon="💪" label="Volume" value={`${summary.totalVolume.toLocaleString()} kg`} />
-        <StatBox icon="✓" label="Series"
+        <StatBox icon="&#9201;" label="Duree" value={summary.duration} />
+        <StatBox icon="&#128170;" label="Volume" value={`${summary.totalVolume.toLocaleString()} kg`} />
+        <StatBox icon="&#10003;" label="Series"
           value={`${summary.totalSetsDone}/${summary.totalSetsTarget}`}
           sub={`${pct}%`}
           color={pct >= 90 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)'}
         />
         {summary.rpeAvg !== null && (
-          <StatBox icon="❤" label="RPE moyen" value={summary.rpeAvg}
+          <StatBox icon="&#10084;" label="RPE moyen" value={summary.rpeAvg}
             color={summary.rpeAvg <= 7 ? 'var(--success)' : summary.rpeAvg >= 9 ? 'var(--danger)' : 'var(--warning)'}
           />
         )}
       </div>
       {summary.prs.length > 0 && (
         <div style={{ background: 'linear-gradient(90deg,#ff6f0022,#ffa00022)', border: '1px solid #ff6f0055', borderRadius: 'var(--r1)', padding: 'var(--s3)' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#ff6f00', marginBottom: 4 }}>🏆 Records personnels</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#ff6f00', marginBottom: 4 }}>&#127942; Records personnels</div>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{summary.prs.join(' · ')}</div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Modal parametres de notification
+function NotifSettingsModal({ onClose }) {
+  const { notifEnabled, notifTime, loading, enable, disable, update } = useNotifications();
+  const [time, setTime] = useState(notifTime || '09:00');
+  const [result, setResult] = useState(null);
+
+  async function handleToggle() {
+    if (notifEnabled) {
+      await disable();
+      setResult('Notifications desactivees');
+    } else {
+      const ok = await enable(time);
+      setResult(ok ? 'Rappel programme a ' + time : 'Permission refusee — activez les notifications dans les parametres Android');
+    }
+  }
+
+  async function handleTimeChange(e) {
+    setTime(e.target.value);
+    if (notifEnabled) await update(e.target.value);
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle" />
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 'var(--s4)' }}>&#128276; Rappel quotidien</div>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 'var(--s4)', lineHeight: 1.6 }}>
+          Recois une notification chaque jour pour ne pas oublier ta seance.
+        </div>
+        <div style={{ marginBottom: 'var(--s4)' }}>
+          <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+            Heure du rappel
+          </label>
+          <input type="time" value={time} onChange={handleTimeChange}
+            style={{ fontSize: 18, fontWeight: 700, padding: '8px 12px' }}
+          />
+        </div>
+        <button onClick={handleToggle} disabled={loading} style={{
+          width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r2)',
+          background: notifEnabled ? 'var(--danger)' : 'var(--accent)',
+          color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 'var(--s3)',
+          opacity: loading ? 0.7 : 1,
+        }}>
+          {loading ? 'Chargement...' : notifEnabled ? 'Desactiver le rappel' : 'Activer le rappel'}
+        </button>
+        {result && (
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center', padding: 'var(--s2)' }}>
+            {result}
+          </div>
+        )}
+        <button className="btn-secondary" onClick={onClose} style={{ width: '100%' }}>Fermer</button>
+      </div>
     </div>
   );
 }
@@ -78,12 +139,27 @@ export default function SessionView({ workout }) {
   const [sessionNote, setSessionNote] = useState('');
   const [showFinish, setShowFinish] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
+  const [showGuided, setShowGuided] = useState(false);
+  const [showNotifSettings, setShowNotifSettings] = useState(false);
 
   const sessionTimer = useSessionTimer();
   const restTimer = useRestTimer();
 
+  // Hydratation pour le coach
+  const [hydration] = useStorage(STORAGE_KEYS.HYDRATION_TODAY, 0);
+  const { insights } = useCoach({
+    history: workout.history,
+    todaySession: workout.todaySession,
+    hydration,
+  });
+
   const currentWorkout = WORKOUT_TYPES[selectedType];
   const isRestDay = todayType === 'Repos';
+
+  // Filtrer les exercices desactives
+  const activeExercises = currentWorkout.exercises.filter(
+    ex => !workout.disabledExercises.includes(ex.id)
+  );
 
   const summary = showFinish ? computeSummary(
     currentWorkout.exercises, workout.todaySession, sessionTimer.formatted, workout.getPR
@@ -98,13 +174,16 @@ export default function SessionView({ workout }) {
     setShowFinish(false);
   }
 
-  function handleSetCheck() { restTimer.startRest(90); }
+  function handleSetCheck(exercise) {
+    restTimer.startRest(exercise.restSeconds || 90);
+  }
 
   if (isRestDay) {
     return (
       <div style={{ padding: 'var(--s4)', paddingBottom: 'max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 50px))' }}>
+        <CoachCard insights={insights} />
         <div className="card" style={{ textAlign: 'center', padding: 'var(--s6)' }}>
-          <div style={{ fontSize: 48, marginBottom: 'var(--s3)' }}>😴</div>
+          <div style={{ fontSize: 48, marginBottom: 'var(--s3)' }}>&#128564;</div>
           <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 'var(--s2)' }}>Jour de repos</div>
           <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
             La recuperation fait partie de la progression. Profites-en pour manger et dormir !
@@ -118,6 +197,9 @@ export default function SessionView({ workout }) {
 
   return (
     <div style={{ padding: 'var(--s4)', paddingBottom: 'max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 50px))' }}>
+
+      {/* Coach insights */}
+      <CoachCard insights={insights} />
 
       {/* Selecteur Full A/B/C */}
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
@@ -140,7 +222,7 @@ export default function SessionView({ workout }) {
         })}
       </div>
 
-      {/* Card infos séance + bouton start + calculateur */}
+      {/* Card infos seance */}
       <div className="card" style={{ marginBottom: 'var(--s4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -149,44 +231,72 @@ export default function SessionView({ workout }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
             {sessionStarted && (
-              <div style={{ fontWeight: 700, fontSize: 20, fontVariantNumeric: 'tabular-nums', color: currentWorkout.color }}>
-                ⏱ {sessionTimer.formatted}
+              <div style={{ fontWeight: 700, fontSize: 18, fontVariantNumeric: 'tabular-nums', color: currentWorkout.color }}>
+                &#9201; {sessionTimer.formatted}
               </div>
             )}
-            {/* Bouton calculateur de disques — inline dans la card */}
-            <button
-              onClick={() => setShowPlateCalc(true)}
-              title="Calculateur de disques"
-              style={{
-                width: 40, height: 40, borderRadius: 'var(--r2)',
-                background: 'var(--surface-2)',
-                border: '1.5px solid var(--border)',
-                color: 'var(--text-secondary)',
-                fontSize: 18,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              ⚖
+            {/* Rappel */}
+            <button onClick={() => setShowNotifSettings(true)} title="Rappel quotidien" style={{
+              width: 36, height: 36, borderRadius: 'var(--r2)',
+              background: 'var(--surface-2)', border: '1.5px solid var(--border)',
+              color: 'var(--text-secondary)', fontSize: 15,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              &#128276;
+            </button>
+            {/* Calculateur */}
+            <button onClick={() => setShowPlateCalc(true)} title="Calculateur de disques" style={{
+              width: 36, height: 36, borderRadius: 'var(--r2)',
+              background: 'var(--surface-2)', border: '1.5px solid var(--border)',
+              color: 'var(--text-secondary)', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              &#9878;
             </button>
           </div>
         </div>
 
-        <div style={{ marginTop: 'var(--s4)' }}>
+        <div style={{ marginTop: 'var(--s4)', display: 'flex', gap: 'var(--s2)' }}>
           {!sessionStarted ? (
-            <button className="btn-primary" onClick={handleStart} style={{ background: currentWorkout.color }}>
-              ▶ Demarrer la seance
-            </button>
+            <>
+              <button className="btn-primary" onClick={handleStart} style={{ background: currentWorkout.color, flex: 1 }}>
+                &#9654; Demarrer
+              </button>
+              <button onClick={() => { handleStart(); setShowGuided(true); }} style={{
+                padding: 'var(--s3) var(--s4)', borderRadius: 'var(--r2)',
+                background: `${currentWorkout.color}20`, border: `1.5px solid ${currentWorkout.color}`,
+                color: currentWorkout.color, fontWeight: 700, fontSize: 13, flexShrink: 0,
+              }}>
+                &#128247; Guide
+              </button>
+            </>
           ) : (
-            <button className="btn-secondary" onClick={() => setShowFinish(true)}
-              style={{ width: '100%', justifyContent: 'center', color: 'var(--danger)' }}>
-              ✓ Terminer la seance
-            </button>
+            <div style={{ display: 'flex', gap: 'var(--s2)', width: '100%' }}>
+              <button onClick={() => setShowGuided(true)} style={{
+                flex: 1, padding: 'var(--s3)', borderRadius: 'var(--r2)',
+                border: `1.5px solid ${currentWorkout.color}`,
+                background: `${currentWorkout.color}15`, color: currentWorkout.color,
+                fontWeight: 700, fontSize: 13,
+              }}>
+                &#128247; Mode guide
+              </button>
+              <button className="btn-secondary" onClick={() => setShowFinish(true)}
+                style={{ flex: 1, justifyContent: 'center', color: 'var(--danger)' }}>
+                &#10003; Terminer
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Exercices */}
+      {/* Exercices desactives (affichage compact) */}
+      {workout.disabledExercises.length > 0 && (
+        <div style={{ marginBottom: 'var(--s3)', fontSize: 12, color: 'var(--text-muted)', padding: 'var(--s2) var(--s3)', background: 'var(--surface-2)', borderRadius: 'var(--r1)' }}>
+          {workout.disabledExercises.length} exercice(s) desactive(s)
+        </div>
+      )}
+
+      {/* Liste exercices */}
       {currentWorkout.exercises.map((exercise) => (
         <ExerciseCard
           key={exercise.id}
@@ -197,9 +307,16 @@ export default function SessionView({ workout }) {
           rpe={workout.todaySession.rpe[exercise.id]}
           isPR={workout.getPR(exercise.id)}
           weightSuggestion={workout.getWeightSuggestion(exercise.id, exercise.sets)}
-          onToggleSet={(setIdx) => { workout.toggleSet(exercise.id, setIdx); handleSetCheck(); }}
+          note={workout.exerciseNotes[exercise.id]}
+          isDisabled={workout.disabledExercises.includes(exercise.id)}
+          swappedName={workout.swappedExercises[exercise.id]}
+          onToggleSet={(setIdx) => { workout.toggleSet(exercise.id, setIdx); handleSetCheck(exercise); }}
           onWeightChange={(kg) => workout.setWeight(exercise.id, kg)}
           onRpeChange={(rpe) => workout.setRpe(exercise.id, rpe)}
+          onNoteChange={workout.setExerciseNote}
+          onToggleDisable={workout.toggleDisableExercise}
+          onSwap={workout.swapExercise}
+          onResetSwap={workout.resetSwap}
         />
       ))}
 
@@ -207,7 +324,7 @@ export default function SessionView({ workout }) {
       <div style={{ marginTop: 'var(--s4)' }}><SupplementTracker /></div>
       <div style={{ marginTop: 'var(--s4)' }}><WeightTracker /></div>
 
-      {/* Timer repos flottant */}
+      {/* Timer repos */}
       {restTimer.active && (
         <div className="rest-timer">
           <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Repos</span>
@@ -224,7 +341,7 @@ export default function SessionView({ workout }) {
         <div className="modal-overlay" onClick={() => setShowFinish(false)}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="modal-handle" />
-            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 'var(--s4)' }}>🎉 Fin de seance</div>
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 'var(--s4)' }}>&#127881; Fin de seance</div>
             {summary && <SessionSummary summary={summary} />}
             <textarea
               placeholder="Note de seance (optionnel)..."
@@ -233,13 +350,27 @@ export default function SessionView({ workout }) {
               rows={3}
               style={{ marginBottom: 'var(--s4)', resize: 'none' }}
             />
-            <button className="btn-primary" onClick={handleFinish}>✓ Valider et sauvegarder</button>
+            <button className="btn-primary" onClick={handleFinish}>&#10003; Valider et sauvegarder</button>
           </div>
         </div>
       )}
 
-      {/* Calculateur de disques (modal) */}
+      {/* Calculateur de disques */}
       {showPlateCalc && <PlateCalculator onClose={() => setShowPlateCalc(false)} />}
+
+      {/* Mode guide */}
+      {showGuided && (
+        <GuidedSessionView
+          exercises={activeExercises}
+          workout={workout}
+          sessionStarted={sessionStarted}
+          restTimer={restTimer}
+          onClose={() => setShowGuided(false)}
+        />
+      )}
+
+      {/* Notification settings */}
+      {showNotifSettings && <NotifSettingsModal onClose={() => setShowNotifSettings(false)} />}
     </div>
   );
 }

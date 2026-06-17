@@ -204,8 +204,102 @@ function Legend() {
   );
 }
 
+// ── Graphe 1RM estimé (Epley) ──────────────────────────────────────────────
+function OneRMChart({ history, exerciseId }) {
+  const ex = ALL_EXERCISES.find(e => e.id === exerciseId);
+  const repsAvg = ex ? Math.round((ex.repsMin + ex.repsMax) / 2) : 8;
+
+  const points = [...history]
+    .reverse()
+    .filter(s => s.weights && s.weights[exerciseId] != null && s.weights[exerciseId] > 0)
+    .slice(0, 10)
+    .map(s => {
+      const w = s.weights[exerciseId];
+      const oneRM = Math.round(w * (1 + repsAvg / 30));
+      return { oneRM, w, label: s.date ? s.date.slice(5).replace('-', '/') : '?' };
+    });
+
+  if (points.length < 2) {
+    return (
+      <div style={{ textAlign: 'center', padding: 'var(--s5)', color: 'var(--text-muted)', fontSize: 13 }}>
+        {points.length === 0
+          ? 'Aucune donnee pour cet exercice'
+          : 'Besoin de plus de seances pour afficher la progression'}
+      </div>
+    );
+  }
+
+  const values = points.map(p => p.oneRM);
+  const maxV = Math.max(...values);
+  const minV = Math.min(...values);
+  const range = maxV - minV || maxV * 0.2 || 10;
+  const padMin = minV - range * 0.15;
+
+  const W = 300, H = 130;
+  const padL = 34, padR = 10, padT = 18, padB = 24;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const toX = i => padL + (i / (points.length - 1)) * chartW;
+  const toY = v => padT + chartH - ((v - padMin) / (range * 1.3)) * chartH;
+  const polyline = points.map((p, i) => `${toX(i)},${toY(p.oneRM)}`).join(' ');
+  const area = `${padL},${padT + chartH} ` + points.map((p, i) => `${toX(i)},${toY(p.oneRM)}`).join(' ') + ` ${toX(points.length - 1)},${padT + chartH}`;
+
+  const trend = points[points.length - 1].oneRM - points[0].oneRM;
+  const trendColor = trend > 0 ? 'var(--success)' : trend < 0 ? 'var(--danger)' : 'var(--text-muted)';
+  const latestOneRM = points[points.length - 1].oneRM;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+          Actuel : <strong style={{ color: 'var(--accent)', fontSize: 15 }}>{latestOneRM} kg</strong>
+        </div>
+        <div style={{ fontSize: 11, color: trendColor, fontWeight: 600 }}>
+          {trend > 0 ? '+' : ''}{trend}kg sur la periode
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
+        <defs>
+          <linearGradient id="orm-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon points={area} fill="url(#orm-fill)" />
+        <polyline points={polyline} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" />
+        {points.map((p, i) => {
+          const x = toX(i); const y = toY(p.oneRM);
+          const isLast = i === points.length - 1;
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r={isLast ? 5 : 3.5}
+                fill={isLast ? 'var(--accent)' : 'var(--surface)'}
+                stroke="var(--accent)" strokeWidth="2" />
+              <text x={x} y={y - 8} fill="var(--text-secondary)" fontSize="8" textAnchor="middle">
+                {p.oneRM}
+              </text>
+              {(i === 0 || isLast || points.length <= 5) && (
+                <text x={x} y={H - padB + 10} fill="var(--text-muted)" fontSize="7" textAnchor="middle">
+                  {p.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        <line x1={padL} y1={padT} x2={padL} y2={padT + chartH} stroke="var(--border)" strokeWidth="1" />
+        <line x1={padL} y1={padT + chartH} x2={W - padR} y2={padT + chartH} stroke="var(--border)" strokeWidth="1" />
+      </svg>
+      <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', marginTop: 4 }}>
+        Formule Epley &middot; {repsAvg} reps moyennes
+      </div>
+    </div>
+  );
+}
+
 export default function StatsView({ history }) {
   const [selectedExId, setSelectedExId] = useState('squat');
+  const [progTab, setProgTab] = useState('weight'); // 'weight' | '1rm'
 
   const totalVol = history.reduce((acc, s) => acc + computeSessionVolume(s), 0);
   const totalSessions = history.filter(s => s.type !== 'Repos').length;
@@ -237,9 +331,26 @@ export default function StatsView({ history }) {
         </div>
       </div>
 
-      {/* Progression poids par exercice */}
+      {/* Progression poids / 1RM par exercice */}
       <div className="card">
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 'var(--s3)' }}>Progression du poids</div>
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 'var(--s3)' }}>Progression</div>
+
+        {/* Tabs Poids / 1RM */}
+        <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s3)', background: 'var(--surface-2)', borderRadius: 'var(--r2)', padding: 3 }}>
+          {[{ id: 'weight', label: 'Poids' }, { id: '1rm', label: '1RM estimé' }].map(tab => (
+            <button key={tab.id} onClick={() => setProgTab(tab.id)} style={{
+              flex: 1, padding: '6px 0', borderRadius: 'calc(var(--r2) - 2px)',
+              background: progTab === tab.id ? 'var(--surface)' : 'transparent',
+              color: progTab === tab.id ? 'var(--accent)' : 'var(--text-muted)',
+              fontWeight: progTab === tab.id ? 700 : 400, fontSize: 13,
+              boxShadow: progTab === tab.id ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
+              transition: 'all 0.15s',
+            }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <select
           value={selectedExId}
           onChange={e => setSelectedExId(e.target.value)}
@@ -249,7 +360,11 @@ export default function StatsView({ history }) {
             <option key={ex.id} value={ex.id}>{ex.name}</option>
           ))}
         </select>
-        <ExerciseProgressChart history={history} exerciseId={selectedExId} />
+
+        {progTab === 'weight'
+          ? <ExerciseProgressChart history={history} exerciseId={selectedExId} />
+          : <OneRMChart history={history} exerciseId={selectedExId} />
+        }
       </div>
     </div>
   );

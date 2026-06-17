@@ -3,43 +3,28 @@ import { useStorage, STORAGE_KEYS } from './useStorage';
 import { PROGRAM_START, DAY_TYPES } from '../data/workout';
 
 const STARTING_WEIGHTS = {
-  squat:           60,
-  bench_press:     50,
-  barbell_row:     50,
-  hip_thrust:      60,
-  ohp_a:           30,
-  curl_bar_a:      20,
-  leg_press_b:     80,
-  incline_press_b: 40,
-  pulldown_b:      45,
-  rdl_b:           50,
-  lateral_b:        8,
-  hammer_b:        14,
-  calf_b:          40,
-  lunges_c:        20,
-  dips_c:           0,
-  cable_row_c:     40,
-  leg_curl_c:      25,
-  leg_ext_c:       30,
-  arnold_c:        12,
-  facepull_c:      12,
+  squat: 60, bench_press: 50, barbell_row: 50, hip_thrust: 60,
+  ohp_a: 30, curl_bar_a: 20, leg_press_b: 80, incline_press_b: 40,
+  pulldown_b: 45, rdl_b: 50, lateral_b: 8, hammer_b: 14, calf_b: 40,
+  lunges_c: 20, dips_c: 0, cable_row_c: 40, leg_curl_c: 25,
+  leg_ext_c: 30, arnold_c: 12, facepull_c: 12,
 };
 
 export function useWorkout() {
   const today = getTodayKey();
   const [sessionState, setSessionState] = useStorage(STORAGE_KEYS.SESSION_STATE, {});
   const [history, setHistory] = useStorage(STORAGE_KEYS.WORKOUT_HISTORY, []);
+  const [exerciseNotes, setExerciseNotes] = useStorage(STORAGE_KEYS.EXERCISE_NOTES, {});
+  const [disabledExercises, setDisabledExercises] = useStorage(STORAGE_KEYS.DISABLED_EXERCISES, []);
+  const [swappedExercises, setSwappedExercises] = useStorage(STORAGE_KEYS.SWAPPED_EXERCISES, {});
 
-  // ── Nettoyage auto au démarrage ─────────────────────────────────────────
-  // SESSION_STATE ne conserve que aujourd'hui + hier.
-  // Toutes les données historiques vivent dans WORKOUT_HISTORY.
   useEffect(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const cutoff = yesterday.toISOString().split('T')[0];
     setSessionState(prev => {
       const hasOld = Object.keys(prev).some(d => d < cutoff);
-      if (!hasOld) return prev; // rien à faire, pas de re-render
+      if (!hasOld) return prev;
       const next = {};
       Object.entries(prev).forEach(([d, v]) => { if (d >= cutoff) next[d] = v; });
       return next;
@@ -73,13 +58,9 @@ export function useWorkout() {
   const finishWorkout = useCallback((workoutType, note = '', duration = '') => {
     updateToday(s => ({ ...s, completed: true }));
     const entry = {
-      date: today,
-      type: workoutType,
-      sets: todaySession.sets,
-      weights: todaySession.weights,
-      rpe: todaySession.rpe,
-      note, duration,
-      finishedAt: Date.now(),
+      date: today, type: workoutType,
+      sets: todaySession.sets, weights: todaySession.weights, rpe: todaySession.rpe,
+      note, duration, finishedAt: Date.now(),
     };
     setHistory(prev => {
       const filtered = prev.filter(h => h.date !== today);
@@ -87,13 +68,10 @@ export function useWorkout() {
     });
   }, [today, todaySession, updateToday, setHistory]);
 
-  // ── Suppression d'une séance ─────────────────────────────────────────────
-  // Efface à la fois l'entrée historique ET le sessionState du jour concerné
-  // (sinon les sets cochés restent visibles dans la vue Séance)
   const deleteSession = useCallback((date) => {
     setHistory(prev => prev.filter(h => h.date !== date));
     setSessionState(prev => {
-      if (!prev[date]) return prev; // rien à effacer
+      if (!prev[date]) return prev;
       const next = { ...prev };
       delete next[date];
       return next;
@@ -118,16 +96,13 @@ export function useWorkout() {
       const startWeight = STARTING_WEIGHTS[exerciseId];
       if (startWeight == null) return null;
       return {
-        lastWeight: null,
-        suggestion: startWeight,
-        delta: 0,
-        reason: startWeight === 0 ? 'Poids du corps' : 'Suggestion depart',
-        isDefault: true,
+        lastWeight: null, suggestion: startWeight, delta: 0,
+        reason: startWeight === 0 ? 'Poids du corps' : 'Suggestion depart', isDefault: true,
       };
     }
 
     const lastWeight = lastWithExercise.weights[exerciseId];
-    const lastRpe    = lastWithExercise.rpe?.[exerciseId] || null;
+    const lastRpe = lastWithExercise.rpe?.[exerciseId] || null;
     const setsCompleted = totalSets
       ? Array.from({ length: totalSets }, (_, i) =>
           lastWithExercise.sets?.[`${exerciseId}_${i}`]
@@ -149,16 +124,36 @@ export function useWorkout() {
     return { lastWeight, suggestion: Math.max(0, lastWeight + delta), delta, reason, isDefault: false };
   }, [history, today]);
 
+  const setExerciseNote = useCallback((exerciseId, note) => {
+    setExerciseNotes(prev => ({ ...prev, [exerciseId]: note }));
+  }, [setExerciseNotes]);
+
+  const toggleDisableExercise = useCallback((exerciseId) => {
+    setDisabledExercises(prev =>
+      prev.includes(exerciseId)
+        ? prev.filter(id => id !== exerciseId)
+        : [...prev, exerciseId]
+    );
+  }, [setDisabledExercises]);
+
+  const swapExercise = useCallback((exerciseId, altName) => {
+    setSwappedExercises(prev => ({ ...prev, [exerciseId]: altName }));
+  }, [setSwappedExercises]);
+
+  const resetSwap = useCallback((exerciseId) => {
+    setSwappedExercises(prev => {
+      const next = { ...prev };
+      delete next[exerciseId];
+      return next;
+    });
+  }, [setSwappedExercises]);
+
   return {
-    todaySession,
-    toggleSet,
-    setWeight,
-    setRpe,
-    finishWorkout,
-    getPR,
-    getWeightSuggestion,
-    deleteSession,
-    history,
+    todaySession, toggleSet, setWeight, setRpe, finishWorkout,
+    getPR, getWeightSuggestion, deleteSession, history,
+    exerciseNotes, setExerciseNote,
+    disabledExercises, toggleDisableExercise,
+    swappedExercises, swapExercise, resetSwap,
   };
 }
 

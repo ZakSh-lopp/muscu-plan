@@ -20,6 +20,7 @@ export const WORKOUT_TYPES = {
         id: 'squat',
         name: 'Squat barre',
         sets: 4, repsMin: 5, repsMax: 7,
+        compound: true, restSeconds: 180,
         muscle: 'Quadriceps · Fessiers',
         tips: 'Pieds largeur épaules, descente cuisses parallèles, genoux dans l\'axe des orteils. Respire fort, gainage maximal.',
         alternatives: [
@@ -32,6 +33,7 @@ export const WORKOUT_TYPES = {
         id: 'bench_press',
         name: 'Développé couché barre',
         sets: 4, repsMin: 5, repsMax: 7,
+        compound: true, restSeconds: 180,
         muscle: 'Pectoraux · Triceps · Deltoïdes ant.',
         tips: 'Coudes à 45°, omoplates rétractées et déprimées, descente contrôlée jusqu\'au bas de la poitrine.',
         alternatives: [
@@ -44,6 +46,7 @@ export const WORKOUT_TYPES = {
         id: 'barbell_row',
         name: 'Rowing barre pronation',
         sets: 4, repsMin: 5, repsMax: 7,
+        compound: true, restSeconds: 150,
         muscle: 'Grand dorsal · Trapèzes · Biceps',
         tips: 'Dos plat à 45°, tirer le coude vers la hanche (pas l\'épaule), barre effleure l\'abdomen.',
         alternatives: [
@@ -56,6 +59,7 @@ export const WORKOUT_TYPES = {
         id: 'hip_thrust',
         name: 'Hip thrust haltères',
         sets: 3, repsMin: 10, repsMax: 12,
+        restSeconds: 90,
         muscle: 'Fessiers · Ischio-jambiers',
         tips: 'Épaules sur le banc, haltères sur les hanches, extension complète en haut, serrer fort les fessiers.',
         alternatives: [
@@ -68,6 +72,7 @@ export const WORKOUT_TYPES = {
         id: 'ohp_a',
         name: 'Développé militaire barre',
         sets: 3, repsMin: 6, repsMax: 8,
+        compound: true, restSeconds: 150,
         muscle: 'Deltoïdes · Trapèzes · Triceps',
         tips: 'Debout, gainage maximal, pas de cambrure, barre part du bas du menton.',
         alternatives: [
@@ -80,6 +85,7 @@ export const WORKOUT_TYPES = {
         id: 'curl_bar_a',
         name: 'Curl barre EZ',
         sets: 3, repsMin: 8, repsMax: 10,
+        restSeconds: 60,
         muscle: 'Biceps brachial · Brachial',
         tips: 'Coudes fixes collés au corps, supination complète en haut, descente lente 3 secondes.',
         alternatives: [
@@ -102,6 +108,7 @@ export const WORKOUT_TYPES = {
         id: 'leg_press_b',
         name: 'Leg press',
         sets: 4, repsMin: 10, repsMax: 12,
+        compound: true, restSeconds: 150,
         muscle: 'Quadriceps · Fessiers · Ischio',
         tips: 'Pieds à mi-hauteur de la plaque, amplitude max sans décoller le bas du dos, ne pas verrouiller les genoux.',
         alternatives: [
@@ -114,6 +121,7 @@ export const WORKOUT_TYPES = {
         id: 'incline_press_b',
         name: 'Développé incliné haltères',
         sets: 4, repsMin: 10, repsMax: 12,
+        restSeconds: 120,
         muscle: 'Pectoraux supérieurs · Deltoïdes ant.',
         tips: 'Angle 30-45°, descente contrôlée, coudes légèrement en dessous de l\'horizontale, pousser vers le haut et légèrement vers l\'intérieur.',
         alternatives: [
@@ -126,6 +134,7 @@ export const WORKOUT_TYPES = {
         id: 'pulldown_b',
         name: 'Lat pulldown prise large',
         sets: 4, repsMin: 8, repsMax: 10,
+        compound: true, restSeconds: 120,
         muscle: 'Grand dorsal · Rhomboïdes · Biceps',
         tips: 'Tirer les coudes vers les hanches (pas les mains), se pencher légèrement en arrière, contraction maximale en bas.',
         alternatives: [
@@ -138,6 +147,7 @@ export const WORKOUT_TYPES = {
         id: 'rdl_b',
         name: 'Romanian deadlift haltères',
         sets: 3, repsMin: 10, repsMax: 12,
+        compound: true, restSeconds: 120,
         muscle: 'Ischio-jambiers · Fessiers · Érecteurs',
         tips: 'Dos plat, haltères glissent le long des cuisses, descend jusqu\'à sentir l\'étirement dans les ischio, hanches en arrière.',
         alternatives: [
@@ -150,6 +160,7 @@ export const WORKOUT_TYPES = {
         id: 'lateral_b',
         name: 'Élévations latérales câble',
         sets: 3, repsMin: 12, repsMax: 15,
+        restSeconds: 60,
         muscle: 'Deltoïdes latéraux',
         tips: 'Câble au niveau du genou, bras légèrement fléchi, lever jusqu\'à l\'horizontale, pouce légèrement vers le bas.',
         alternatives: [
@@ -162,6 +173,7 @@ export const WORKOUT_TYPES = {
         id: 'hammer_b',
         name: 'Curl marteau + Triceps poulie',
         sets: 3, repsMin: 12, repsMax: 12,
+        restSeconds: 60,
         muscle: 'Brachial · Triceps',
         tips: 'Superset : curl marteau immédiatement suivi de triceps corde à la poulie. Repos seulement entre supersets.',
         alternatives: [
@@ -174,6 +186,7 @@ export const WORKOUT_TYPES = {
         id: 'calf_b',
         name: 'Mollets debout machine',
         sets: 4, repsMin: 12, repsMax: 15,
+        restSeconds: 60,
         muscle: 'Gastrocnémiens · Soléaires',
         tips: 'Amplitude complète, pause 1s en bas (étirement), montée explosive, contraction 1s en haut.',
         alternatives: [
@@ -196,6 +209,7 @@ export const WORKOUT_TYPES = {
         id: 'lunges_c',
         name: 'Fentes haltères marchées',
         sets: 3, repsMin: 10, repsMax: 10,
+        restSeconds: 90,
         muscle: 'Quadriceps · Fessiers · Ischio',
         tips: '10 reps par jambe, grand pas, genou arrière effleure le sol, buste droit. Excellent pour point faible jambes.',
         alternatives: [
@@ -208,6 +222,7 @@ export const WORKOUT_TYPES = {
         id: 'dips_c',
         name: 'Dips',
         sets: 3, repsMin: 8, repsMax: 15,
+        restSeconds: 90,
         muscle: 'Pectoraux inférieurs · Triceps · Épaules',
         tips: 'Pencher légèrement vers l\'avant pour cibler les pecs. Si trop facile : lester avec un sac ; si trop dur : machine assistée.',
         alternatives: [
@@ -220,6 +235,7 @@ export const WORKOUT_TYPES = {
         id: 'cable_row_c',
         name: 'Tirage horizontal câble prise serrée',
         sets: 3, repsMin: 12, repsMax: 12,
+        restSeconds: 90,
         muscle: 'Dos moyen · Rhomboïdes · Biceps',
         tips: 'Poitrine haute, ne pas arrondir le dos, tirer jusqu\'à l\'abdomen, coudes proches du corps, contraction 1s.',
         alternatives: [
@@ -232,6 +248,7 @@ export const WORKOUT_TYPES = {
         id: 'leg_curl_c',
         name: 'Leg curl couché machine',
         sets: 3, repsMin: 12, repsMax: 12,
+        restSeconds: 60,
         muscle: 'Ischio-jambiers',
         tips: 'Hanches plaquées au banc, contraction complète à 90°, descente contrôlée 3 secondes. Orteils pointés pour isoler davantage.',
         alternatives: [
@@ -244,6 +261,7 @@ export const WORKOUT_TYPES = {
         id: 'leg_ext_c',
         name: 'Extensions quadriceps',
         sets: 3, repsMin: 15, repsMax: 15,
+        restSeconds: 60,
         muscle: 'Quadriceps (isolation)',
         tips: 'Extension complète, pause 1s en haut, descente lente 3s. Orteils vers l\'intérieur pour le vaste externe.',
         alternatives: [
@@ -256,6 +274,7 @@ export const WORKOUT_TYPES = {
         id: 'arnold_c',
         name: 'Développé Arnold',
         sets: 3, repsMin: 10, repsMax: 12,
+        restSeconds: 90,
         muscle: 'Deltoïdes (3 faisceaux) · Trapèzes',
         tips: 'Partir paume face à soi, rotation pendant la montée jusqu\'à paume vers l\'avant en haut. Travaille tout le deltoïde.',
         alternatives: [
@@ -268,6 +287,7 @@ export const WORKOUT_TYPES = {
         id: 'facepull_c',
         name: 'Face pull corde',
         sets: 3, repsMin: 15, repsMax: 15,
+        restSeconds: 60,
         muscle: 'Deltoïdes postérieurs · Trapèzes · Coiffe des rotateurs',
         tips: 'Corde à hauteur des yeux, tirer vers le visage en écartant les mains, paumes vers le haut à l\'arrivée. Essentiel pour la santé des épaules.',
         alternatives: [
@@ -280,7 +300,7 @@ export const WORKOUT_TYPES = {
   },
 
   Repos: {
-    label: 'Repos',
+        label: 'Repos',
     emoji: '😴',
     color: '#95a5a6',
     tagline: 'Récupération',
@@ -290,10 +310,10 @@ export const WORKOUT_TYPES = {
 };
 
 export const SUPPLEMENTS = [
-  { id: 'creatine', name: 'Créatine',     emoji: '⚡', time: 'Matin',   dose: '5g' },
-  { id: 'omega3',   name: 'Oméga 3-6-9', emoji: '🐟', time: 'Midi',    dose: '2 caps' },
+  { id: 'creatine', name: 'Créatine',       emoji: '⚡', time: 'Matin', dose: '5g' },
+  { id: 'omega3',   name: 'Oméga 3-6-9',   emoji: '🐟', time: 'Midi',  dose: '2 caps' },
   { id: 'zinc_mag', name: 'Zinc/Magnésium', emoji: '🔩', time: 'Soir',  dose: '1 cap' },
-  { id: 'vitd3',    name: 'Vitamine D3', emoji: '☀️', time: 'Matin',   dose: '1 cap' },
+  { id: 'vitd3',    name: 'Vitamine D3',    emoji: '☀️', time: 'Matin', dose: '1 cap' },
 ];
 
 export const MASS_GAINER_TOTAL_DOSES = 25;
