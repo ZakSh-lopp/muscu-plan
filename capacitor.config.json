@@ -1,0 +1,27 @@
+{
+  "appId": "com.zakaria.muscuplan",
+  "appName": "Muscu Plan",
+  "webDir": "dist",
+  "android": {
+    "buildOptions": {
+      "keystorePath": "muscu-plan.keystore",
+      "keystoreAlias": "muscu-plan"
+    }
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#CE0025",
+      "sound": "beep.wav"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#090909",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#090909"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Muscu Plan</string>
+    <string name="title_activity_main">Muscu Plan</string>
+    <string name="package_name">com.zakaria.muscuplan</string>
+    <string name="custom_url_scheme">com.zakaria.muscuplan</string>
+</resources>

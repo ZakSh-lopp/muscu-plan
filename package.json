@@ -1,0 +1,30 @@
+{
+  "name": "muscu-plan",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "npx vite@8 build",
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "cap:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/camera": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/filesystem": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/local-notifications": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^8.0.0"
+  }
+}
