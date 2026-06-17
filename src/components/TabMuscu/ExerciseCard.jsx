@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { getExerciseFrames, getAltFrames } from '../../data/exerciseMedia';
 
-// ────────────────────────────────────────────────────────────
-// Lightbox plein ecran
-// ────────────────────────────────────────────────────────────
 function Lightbox({ frames, name, onClose }) {
   const [frame, setFrame] = useState(0);
   const timerRef = useRef(null);
@@ -32,9 +29,6 @@ function Lightbox({ frames, name, onClose }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Image alternative animee
-// ────────────────────────────────────────────────────────────
 function AltImage({ name }) {
   const frames = getAltFrames(name);
   const [frame, setFrame] = useState(0);
@@ -57,9 +51,6 @@ function AltImage({ name }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Badge 1RM estime
-// ────────────────────────────────────────────────────────────
 function OneRMBadge({ weight, repsMin, repsMax }) {
   if (!weight || weight <= 0) return null;
   const reps = Math.round((repsMin + repsMax) / 2);
@@ -68,7 +59,7 @@ function OneRMBadge({ weight, repsMin, repsMax }) {
   const intensity = Math.round((weight / oneRM) * 100);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', background: 'var(--surface-2)', borderRadius: 'var(--r1)', padding: 'var(--s2) var(--s3)', marginTop: 'var(--s2)', flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 13 }}>&#127947;</span>
+      <span style={{ fontSize: 13 }}>🏋️</span>
       <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Est. 1RM :</span>
       <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--accent)' }}>{oneRM}kg</span>
       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({intensity}% intensite &middot; Epley, {reps} reps)</span>
@@ -76,10 +67,7 @@ function OneRMBadge({ weight, repsMin, repsMax }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Placeholder image quand image indisponible
-// ────────────────────────────────────────────────────────────
-function ImagePlaceholder({ name }) {
+function ImagePlaceholder() {
   return (
     <div style={{ height: 180, background: 'var(--surface-2)', borderRadius: 'var(--r2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 'var(--s4)' }}>
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -92,9 +80,6 @@ function ImagePlaceholder({ name }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Suggestion series d'echauffement pour exercices composes
-// ────────────────────────────────────────────────────────────
 function WarmupSets({ weight, compound }) {
   if (!compound || !weight || weight < 20) return null;
   const sets = [
@@ -123,10 +108,7 @@ function WarmupSets({ weight, compound }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Modal note d'exercice
-// ────────────────────────────────────────────────────────────
-function NoteModal({ exerciseId, exerciseName, currentNote, onSave, onClose }) {
+function NoteModal({ exerciseName, currentNote, onSave, onClose }) {
   const [value, setValue] = useState(currentNote || '');
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -151,9 +133,6 @@ function NoteModal({ exerciseId, exerciseName, currentNote, onSave, onClose }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Modal swap d'exercice
-// ────────────────────────────────────────────────────────────
 function SwapModal({ exercise, currentSwap, onSwap, onReset, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -187,9 +166,6 @@ function SwapModal({ exercise, currentSwap, onSwap, onReset, onClose }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Menu d'options (3 points)
-// ────────────────────────────────────────────────────────────
 function OptionsMenu({ exercise, isDisabled, currentSwap, note, onToggleDisable, onOpenNote, onOpenSwap, onClose }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
@@ -201,17 +177,17 @@ function OptionsMenu({ exercise, isDisabled, currentSwap, note, onToggleDisable,
         minWidth: 200, overflow: 'hidden', zIndex: 201,
       }}>
         <button onClick={() => { onOpenNote(); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', width: '100%', padding: 'var(--s3) var(--s4)', fontSize: 14, color: note ? 'var(--accent)' : 'var(--text-primary)', background: 'none' }}>
-          <span>&#128221;</span>
+          <span>📝</span>
           <span>{note ? 'Modifier la note' : 'Ajouter une note'}</span>
         </button>
         {exercise.alternatives && exercise.alternatives.length > 0 && (
           <button onClick={() => { onOpenSwap(); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', width: '100%', padding: 'var(--s3) var(--s4)', fontSize: 14, color: currentSwap ? 'var(--warning)' : 'var(--text-primary)', background: 'none', borderTop: '1px solid var(--border)' }}>
-            <span>&#8646;</span>
+            <span>⇆</span>
             <span>{currentSwap ? 'Exercice remplace' : 'Remplacer l\'exercice'}</span>
           </button>
         )}
         <button onClick={() => { onToggleDisable(); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', width: '100%', padding: 'var(--s3) var(--s4)', fontSize: 14, color: isDisabled ? 'var(--success)' : 'var(--danger)', background: 'none', borderTop: '1px solid var(--border)' }}>
-          <span>{isDisabled ? '&#9654;' : '&#9646;&#9646;'}</span>
+          <span>{isDisabled ? '▶' : '⏸'}</span>
           <span>{isDisabled ? 'Reactiver' : 'Passer cet exercice'}</span>
         </button>
       </div>
@@ -219,9 +195,6 @@ function OptionsMenu({ exercise, isDisabled, currentSwap, note, onToggleDisable,
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Composant principal ExerciseCard
-// ────────────────────────────────────────────────────────────
 export default function ExerciseCard({
   exercise, sessionStarted,
   checkedSets, weight, rpe, isPR,
@@ -259,6 +232,16 @@ export default function ExerciseCard({
   const allDone = setsChecked.every(Boolean);
   const anyDone = setsChecked.some(Boolean);
 
+  // Suggestion label: ★ / ↑ / ↓ / →  (vraies chaînes Unicode, pas des entités HTML)
+  function getSuggestionText(ws) {
+    if (!ws) return null;
+    const arrow = ws.isDefault ? '★' : ws.delta > 0 ? '↑' : ws.delta < 0 ? '↓' : '→';
+    const weightLabel = ws.suggestion > 0 ? `${ws.suggestion}kg` : 'Poids du corps';
+    // Evite "Poids du corps · Poids du corps" en double
+    const reasonLabel = (ws.suggestion === 0 && ws.reason === 'Poids du corps') ? '' : ` · ${ws.reason}`;
+    return `${arrow} ${weightLabel}${reasonLabel}`;
+  }
+
   if (isDisabled) {
     return (
       <div className="card" style={{ marginBottom: 'var(--s3)', opacity: 0.5, borderLeft: '3px solid var(--border)' }}>
@@ -290,7 +273,7 @@ export default function ExerciseCard({
               <span style={{ fontWeight: 700, fontSize: 15 }}>{displayName}</span>
               {swappedName && <span style={{ fontSize: 10, background: 'var(--warning)', color: '#000', borderRadius: 4, padding: '1px 5px', fontWeight: 700 }}>SWAP</span>}
               {isPR && <span className="badge badge-pr pr-badge">PR</span>}
-              {note && <span title={note} style={{ fontSize: 14 }}>&#128221;</span>}
+              {note && <span title={note} style={{ fontSize: 14 }}>📝</span>}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
               {exercise.muscle} &middot; {exercise.sets}x{exercise.repsMin === exercise.repsMax ? exercise.repsMin : `${exercise.repsMin}-${exercise.repsMax}`}
@@ -298,8 +281,7 @@ export default function ExerciseCard({
             </div>
             {!sessionStarted && weightSuggestion && (
               <div style={{ fontSize: 11, marginTop: 4, fontWeight: 600, color: weightSuggestion.isDefault ? 'var(--accent)' : weightSuggestion.delta > 0 ? 'var(--success)' : weightSuggestion.delta < 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
-                {weightSuggestion.isDefault ? '&#9733;' : weightSuggestion.delta > 0 ? '&#8593;' : weightSuggestion.delta < 0 ? '&#8595;' : '&#8594;'}{' '}
-                {weightSuggestion.suggestion > 0 ? `${weightSuggestion.suggestion}kg` : 'Poids du corps'} &middot; {weightSuggestion.reason}
+                {getSuggestionText(weightSuggestion)}
               </div>
             )}
           </div>
@@ -310,14 +292,14 @@ export default function ExerciseCard({
               <button key={i} className={`set-checkbox ${done ? 'checked' : ''}`}
                 onClick={e => { e.stopPropagation(); if (sessionStarted) onToggleSet(i); }}
                 style={{ opacity: sessionStarted ? 1 : 0.4 }}>
-                {done ? '&#10003;' : i + 1}
+                {done ? '✓' : i + 1}
               </button>
             ))}
           </div>
 
           {/* Bouton options */}
           <button onClick={e => { e.stopPropagation(); setShowOptions(v => !v); }} style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0, padding: '0 4px', background: 'none' }}>
-            &#8942;
+            ⋮
           </button>
         </div>
 
@@ -328,7 +310,7 @@ export default function ExerciseCard({
             {/* Image principale animee ou placeholder */}
             {frames.length > 0 ? (
               imgError ? (
-                <ImagePlaceholder name={displayName} />
+                <ImagePlaceholder />
               ) : (
                 <div style={{ marginBottom: 'var(--s4)', position: 'relative' }}>
                   <div style={{ borderRadius: 'var(--r2)', overflow: 'hidden', background: 'var(--surface-2)', height: 180, display: 'flex', justifyContent: 'center' }}>
@@ -340,19 +322,19 @@ export default function ExerciseCard({
                     />
                   </div>
                   <button onClick={() => setLightbox(true)} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.5)', color: 'white', borderRadius: 8, padding: '4px 8px', fontSize: 16 }}>
-                    &#9974;
+                    ⛶
                   </button>
                 </div>
               )
             ) : null}
 
-            {/* Series d'echauffement (exercices composes uniquement) */}
+            {/* Series d'echauffement */}
             <WarmupSets weight={weight} compound={exercise.compound} />
 
             {/* Note de l'utilisateur */}
             {note && (
               <div style={{ background: 'rgba(var(--accent-rgb,99,102,241),0.1)', borderRadius: 'var(--r1)', padding: 'var(--s3)', marginBottom: 'var(--s4)', borderLeft: '3px solid var(--accent)' }}>
-                <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, marginBottom: 4 }}>&#128221; Ma note</div>
+                <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, marginBottom: 4 }}>📝 Ma note</div>
                 <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{note}</div>
                 <button onClick={() => setShowNote(true)} style={{ marginTop: 4, fontSize: 11, color: 'var(--accent)', background: 'none' }}>Modifier</button>
               </div>
@@ -361,13 +343,13 @@ export default function ExerciseCard({
             {/* Bandeau PR */}
             {isPR && weight > 0 && (
               <div style={{ background: 'linear-gradient(90deg, #ff6f00, #ffa000)', borderRadius: 'var(--r1)', padding: 'var(--s3)', marginBottom: 'var(--s3)', textAlign: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
-                &#127942; Nouveau record personnel ! {weight}kg
+                🏆 Nouveau record personnel ! {weight}kg
               </div>
             )}
 
             {/* Tip */}
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'var(--surface-2)', borderRadius: 'var(--r1)', padding: 'var(--s3)', marginBottom: 'var(--s4)', lineHeight: 1.6 }}>
-              &#128161; {exercise.tips}
+              💡 {exercise.tips}
             </div>
 
             {/* Poids + RPE */}
@@ -378,7 +360,7 @@ export default function ExerciseCard({
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>RPE (1-10)</label>
-                <input type="number" value={rpe || ''} onChange={e => onRpeChange(Math.min(10, Math.max(1, parseInt(e.target.value) || 0)))} placeholder="&mdash;" min="1" max="10" style={{ marginTop: 4, textAlign: 'center', fontWeight: 700, fontSize: 18 }} />
+                <input type="number" value={rpe || ''} onChange={e => onRpeChange(Math.min(10, Math.max(1, parseInt(e.target.value) || 0)))} placeholder="—" min="1" max="10" style={{ marginTop: 4, textAlign: 'center', fontWeight: 700, fontSize: 18 }} />
               </div>
             </div>
 
@@ -406,7 +388,6 @@ export default function ExerciseCard({
         )}
       </div>
 
-      {/* Overlays / modals */}
       {showOptions && (
         <OptionsMenu
           exercise={exercise}
@@ -421,7 +402,6 @@ export default function ExerciseCard({
       )}
       {showNote && (
         <NoteModal
-          exerciseId={exercise.id}
           exerciseName={displayName}
           currentNote={note}
           onSave={val => onNoteChange(exercise.id, val)}

@@ -1,15 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { getExerciseFrames } from '../../data/exerciseMedia';
 
-// ─── Timer de repos local (visuel uniquement, le vrai timer est dans SessionView) ─────
 function RestCountdown({ seconds, onSkip }) {
-  const r = 52;
-  const circ = 2 * Math.PI * r;
-
-  // On recoit le remaining du parent
-  const pct = seconds > 0 ? 1 : 0; // juste un indicateur
   return (
-    <div style={{ textAlign: 'center', padding: 'var(--s6)' }}>
+    <div style={{ textAlign: 'center', padding: 'var(--s6)', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>Repos en cours</div>
       <div style={{ fontSize: 56, fontWeight: 900, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums', marginBottom: 'var(--s4)' }}>
         {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
@@ -21,8 +15,7 @@ function RestCountdown({ seconds, onSkip }) {
   );
 }
 
-// ─── Affichage d'un exercice en mode guide ─────────────────────────────────
-function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sessionStarted, onToggleSet, onWeightChange }) {
+function GuidedExercise({ exercise, totalSets, weight, checkedSets, sessionStarted, onToggleSet, onWeightChange }) {
   const [imgFrame, setImgFrame] = useState(0);
   const [imgError, setImgError] = useState(false);
   const frames = getExerciseFrames(exercise.id);
@@ -35,13 +28,12 @@ function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sess
     return () => clearInterval(intervalRef.current);
   }, [frames.length]);
 
-  // Quel set on est en train de faire (le premier non coche)
   const checkedCount = Array.from({ length: totalSets }, (_, i) =>
     !!(checkedSets && checkedSets[`${exercise.id}_${i}`])
   ).filter(Boolean).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
       {/* Image */}
       {frames.length > 0 && !imgError ? (
@@ -53,11 +45,11 @@ function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sess
         </div>
       ) : (
         <div style={{ height: 200, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: 48 }}>&#127947;</span>
+          <span style={{ fontSize: 48 }}>🏋️</span>
         </div>
       )}
 
-      <div style={{ flex: 1, padding: 'var(--s4)', overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--s4)' }}>
 
         {/* Nom + muscle */}
         <div style={{ marginBottom: 'var(--s4)' }}>
@@ -69,10 +61,10 @@ function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sess
           </div>
         </div>
 
-        {/* Indicateur de sets */}
+        {/* Barre de progression des sets */}
         <div style={{ marginBottom: 'var(--s4)' }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 'var(--s2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Serie {checkedCount + 1} sur {totalSets}
+            Serie {Math.min(checkedCount + 1, totalSets)} sur {totalSets}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {Array.from({ length: totalSets }, (_, i) => {
@@ -100,9 +92,34 @@ function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sess
         </div>
 
         {/* Tip */}
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'var(--surface-2)', borderRadius: 'var(--r1)', padding: 'var(--s3)', lineHeight: 1.6 }}>
-          &#128161; {exercise.tips}
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'var(--surface-2)', borderRadius: 'var(--r1)', padding: 'var(--s3)', lineHeight: 1.6, marginBottom: 'var(--s4)' }}>
+          💡 {exercise.tips}
         </div>
+
+        {/* Alternatives */}
+        {exercise.alternatives && exercise.alternatives.length > 0 && (
+          <div style={{ marginBottom: 'var(--s3)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--s2)' }}>
+              Alternatives
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+              {exercise.alternatives.map((alt, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--s3)',
+                  background: 'var(--surface-2)', borderRadius: 'var(--r1)',
+                  padding: 'var(--s2) var(--s3)',
+                  border: '1px solid var(--border)',
+                }}>
+                  <span style={{ fontSize: 18, color: 'var(--accent)' }}>⇆</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{alt.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{alt.muscle}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bouton serie faite */}
@@ -114,7 +131,7 @@ function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sess
             borderRadius: 'var(--r2)', fontWeight: 800, fontSize: 16,
             boxShadow: '0 4px 16px rgba(var(--accent-rgb,99,102,241),0.4)',
           }}>
-            &#10003; Serie {checkedCount + 1} terminee !
+            ✓ Serie {checkedCount + 1} terminee !
           </button>
         </div>
       )}
@@ -122,7 +139,7 @@ function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sess
       {checkedCount >= totalSets && (
         <div style={{ padding: 'var(--s4)', paddingBottom: 'max(var(--s4), env(safe-area-inset-bottom))', flexShrink: 0 }}>
           <div style={{ textAlign: 'center', color: 'var(--success)', fontWeight: 700, fontSize: 15, padding: 'var(--s3)' }}>
-            &#10003; Exercice complete !
+            ✓ Exercice complete !
           </div>
         </div>
       )}
@@ -130,14 +147,7 @@ function GuidedExercise({ exercise, setIdx, totalSets, weight, checkedSets, sess
   );
 }
 
-// ─── Composant principal ────────────────────────────────────────────────────
-export default function GuidedSessionView({
-  exercises,
-  workout,
-  sessionStarted,
-  restTimer,
-  onClose,
-}) {
+export default function GuidedSessionView({ exercises, workout, sessionStarted, restTimer, onClose }) {
   const [currentIdx, setCurrentIdx] = useState(0);
 
   const exercise = exercises[currentIdx];
@@ -160,7 +170,9 @@ export default function GuidedSessionView({
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 150,
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      zIndex: 150,
       background: 'var(--bg)',
       display: 'flex', flexDirection: 'column',
     }}>
@@ -174,7 +186,7 @@ export default function GuidedSessionView({
         flexShrink: 0,
       }}>
         <button onClick={onClose} style={{ fontSize: 14, color: 'var(--text-muted)', background: 'none', padding: '4px 8px' }}>
-          &#10006; Quitter
+          ✕ Quitter
         </button>
         <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
           {currentIdx + 1} / {exercises.length}
@@ -190,7 +202,7 @@ export default function GuidedSessionView({
         </div>
       </div>
 
-      {/* Timer de repos overlay */}
+      {/* Corps : repos ou exercice */}
       {restTimer.active ? (
         <RestCountdown seconds={restTimer.remaining} onSkip={restTimer.skipRest} />
       ) : (
@@ -220,18 +232,18 @@ export default function GuidedSessionView({
             disabled={currentIdx === 0}
             style={{ flex: 1, padding: 'var(--s3)', borderRadius: 'var(--r2)', background: 'var(--surface-2)', color: 'var(--text-secondary)', fontSize: 14, opacity: currentIdx === 0 ? 0.4 : 1 }}
           >
-            &#8592; Precedent
+            ← Precedent
           </button>
           {isLastExercise ? (
             <button onClick={onClose} style={{ flex: 1, padding: 'var(--s3)', borderRadius: 'var(--r2)', background: 'var(--success)', color: 'white', fontSize: 14, fontWeight: 700 }}>
-              &#127937; Terminer
+              🏁 Terminer
             </button>
           ) : (
             <button
               onClick={() => setCurrentIdx(i => Math.min(exercises.length - 1, i + 1))}
               style={{ flex: 1, padding: 'var(--s3)', borderRadius: 'var(--r2)', background: allSetsForThisEx ? 'var(--accent)' : 'var(--surface-2)', color: allSetsForThisEx ? 'white' : 'var(--text-secondary)', fontSize: 14, fontWeight: allSetsForThisEx ? 700 : 400 }}
             >
-              Suivant &#8594;
+              Suivant →
             </button>
           )}
         </div>
