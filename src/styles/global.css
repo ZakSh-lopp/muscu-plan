@@ -133,8 +133,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .app-header {
-  padding-top: env(safe-area-inset-top);
-  height: calc(var(--header-height) + env(safe-area-inset-top));
+  height: var(--header-height);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;
@@ -149,7 +148,7 @@ input:focus, textarea:focus, select:focus {
 .app-content {
   flex: 1;
   overflow-y: auto; overflow-x: hidden;
-  padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
+  padding-bottom: max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 34px));
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
@@ -167,8 +166,8 @@ input:focus, textarea:focus, select:focus {
    Tab Bar
    ============================================================ */
 .app-tab-bar {
-  height: calc(var(--tab-height) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  height: max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 34px));
+  padding-bottom: max(env(safe-area-inset-bottom), 34px);
   background: var(--surface);
   border-top: 1px solid var(--border);
   display: flex;

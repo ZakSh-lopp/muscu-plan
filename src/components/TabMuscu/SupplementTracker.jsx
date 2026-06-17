@@ -30,15 +30,11 @@ export default function SupplementTracker() {
         </span>
       </div>
 
-      {/* Progress bar */}
       <div className="progress-bar" style={{ marginBottom: 'var(--s3)' }}>
-        <div
-          className="progress-fill"
-          style={{
-            width: `${(doneCount / SUPPLEMENTS.length) * 100}%`,
-            background: allDone ? 'var(--success)' : 'var(--accent)',
-          }}
-        />
+        <div className="progress-fill" style={{
+          width: `${(doneCount / SUPPLEMENTS.length) * 100}%`,
+          background: allDone ? 'var(--success)' : 'var(--accent)',
+        }} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s2)' }}>
@@ -49,32 +45,41 @@ export default function SupplementTracker() {
               key={s.id}
               onClick={() => toggle(s.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--s2)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
                 padding: 'var(--s2) var(--s3)',
                 borderRadius: 'var(--r2)',
                 border: `1.5px solid ${done ? 'var(--success)' : 'var(--border)'}`,
                 background: done ? '#dcfce720' : 'var(--surface-2)',
-                color: done ? 'var(--success)' : 'var(--text)',
-                fontWeight: 600, fontSize: 13,
-                textAlign: 'left',
                 transition: 'all 0.15s ease',
+                gap: 2,
+                position: 'relative',
+                overflow: 'hidden',
               }}
             >
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{s.emoji}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
-                <div style={{ fontSize: 10, color: done ? 'var(--success)' : 'var(--text-muted)', fontWeight: 400 }}>
-                  {s.dose} · {s.time}
-                </div>
+              {/* Indicateur done — bande colorée en haut */}
+              {done && (
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+                  background: 'var(--success)',
+                  borderRadius: '2px 2px 0 0',
+                }} />
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{s.emoji}</span>
+                <span style={{
+                  fontSize: 12, fontWeight: 700,
+                  color: done ? 'var(--success)' : 'var(--text)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  flex: 1,
+                }}>
+                  {s.name}
+                </span>
               </div>
-              <span style={{
-                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                background: done ? 'var(--success)' : 'var(--border)',
-                color: 'white', fontSize: 11, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {done ? '✓' : ''}
-              </span>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', paddingLeft: 24 }}>
+                {s.dose} · {s.time}
+              </div>
             </button>
           );
         })}

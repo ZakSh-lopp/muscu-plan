@@ -29,7 +29,7 @@ export default function TabNutrition() {
   const totalProtein = eaten.reduce((s, m) => s + m.protein, 0);
 
   return (
-    <div style={{ padding: 'var(--s4)', paddingBottom: 100 }}>
+    <div style={{ padding: 'var(--s4)', paddingBottom: 'max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 50px))' }}>
 
       {/* Selecteur de jour */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 'var(--s4)', overflowX: 'auto' }}>

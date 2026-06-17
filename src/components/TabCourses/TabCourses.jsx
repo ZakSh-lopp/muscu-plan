@@ -42,7 +42,7 @@ export default function TabCourses() {
   const checkedItems = allItems.filter(i => passageChecked[i.id]).length;
 
   return (
-    <div style={{ padding: 'var(--s4)' }}>
+    <div style={{ padding: 'var(--s4)', paddingBottom: 'max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 50px))' }}>
       {/* Sélecteur de passage */}
       <div style={{ marginBottom: 'var(--s4)' }}>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
