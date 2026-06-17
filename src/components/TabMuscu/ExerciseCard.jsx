@@ -176,7 +176,7 @@ export default function ExerciseCard({
                   : weightSuggestion.delta < 0 ? 'var(--danger)'
                   : 'var(--text-muted)',
               }}>
-                {weightSuggestion.isDefault ? '&#9733;' : weightSuggestion.delta > 0 ? '&#8593;' : weightSuggestion.delta < 0 ? '&#8595;' : '&#8594;'}{' '}
+                {weightSuggestion.isDefault ? '★' : weightSuggestion.delta > 0 ? '↑' : weightSuggestion.delta < 0 ? '↓' : '→'}{' '}
                 {weightSuggestion.suggestion > 0 ? `${weightSuggestion.suggestion}kg` : 'Poids du corps'} &middot; {weightSuggestion.reason}
               </div>
             )}
@@ -191,7 +191,7 @@ export default function ExerciseCard({
                 onClick={e => { e.stopPropagation(); if (sessionStarted) onToggleSet(i); }}
                 style={{ opacity: sessionStarted ? 1 : 0.4 }}
               >
-                {done ? '&#10003;' : i + 1}
+                {done ? '✓' : i + 1}
               </button>
             ))}
           </div>

@@ -25,7 +25,7 @@ export default function CalendarView() {
   const historyDates = new Set(history.map(h => h.date));
 
   return (
-    <div style={{ padding: 'var(--s4)' }}>
+    <div style={{ padding: 'var(--s4)', paddingBottom: 'calc(var(--tab-height) + env(safe-area-inset-bottom) + 24px)' }}>
 
       {/* Légende */}
       <div style={{ display: 'flex', gap: 'var(--s3)', marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>

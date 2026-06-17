@@ -34,7 +34,7 @@ export default function ObjectivesPanel() {
   }
 
   return (
-    <div style={{ padding: 'var(--s4)' }}>
+    <div style={{ padding: 'var(--s4)', paddingBottom: 'calc(var(--tab-height) + env(safe-area-inset-bottom) + 24px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s4)' }}>
         <div style={{ fontWeight: 700, fontSize: 16 }}>🎯 Mes objectifs</div>
         <button onClick={() => setShowAdd(v => !v)} style={{

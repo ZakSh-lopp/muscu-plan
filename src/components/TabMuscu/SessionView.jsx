@@ -139,7 +139,7 @@ export default function SessionView({ workout }) {
 
   if (isRestDay) {
     return (
-      <div style={{ padding: 'var(--s4)' }}>
+      <div style={{ padding: 'var(--s4)', paddingBottom: 'calc(var(--tab-height) + env(safe-area-inset-bottom) + 24px)' }}>
         <div className="card" style={{ textAlign: 'center', padding: 'var(--s6)' }}>
           <div style={{ fontSize: 48, marginBottom: 'var(--s3)' }}>&#128564;</div>
           <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 'var(--s2)' }}>Jour de repos</div>
@@ -154,7 +154,7 @@ export default function SessionView({ workout }) {
   }
 
   return (
-    <div style={{ padding: 'var(--s4)', paddingBottom: 100 }}>
+    <div style={{ padding: 'var(--s4)', paddingBottom: 'calc(var(--tab-height) + env(safe-area-inset-bottom) + 80px)' }}>
 
       {/* Selecteur Full A/B/C */}
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
@@ -273,7 +273,7 @@ export default function SessionView({ workout }) {
       <button
         onClick={() => setShowPlateCalc(true)}
         style={{
-          position: 'fixed', bottom: 80, right: 16, zIndex: 100,
+          position: 'fixed', bottom: 'calc(var(--tab-height) + env(safe-area-inset-bottom) + 16px)', right: 16, zIndex: 100,
           width: 48, height: 48, borderRadius: '50%',
           background: 'var(--accent)', color: 'white',
           fontSize: 20, fontWeight: 700,

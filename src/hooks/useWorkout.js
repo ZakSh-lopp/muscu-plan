@@ -133,6 +133,10 @@ export function useWorkout() {
     };
   }, [history, today]);
 
+  const deleteSession = useCallback((date) => {
+    setHistory(prev => prev.filter(h => h.date !== date));
+  }, [setHistory]);
+
   return {
     todaySession,
     toggleSet,
@@ -141,6 +145,7 @@ export function useWorkout() {
     finishWorkout,
     getPR,
     getWeightSuggestion,
+    deleteSession,
     history,
   };
 }

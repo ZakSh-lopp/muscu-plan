@@ -64,7 +64,7 @@ export default function Header({ week, todayType, activeTab }) {
             boxShadow: streak >= 7 ? '0 2px 8px rgba(255,179,0,0.25)' : 'none',
             transition: 'all 0.3s ease',
           }}>
-            <span style={{ fontSize: 14 }}>{badge || '&#128170;'}</span>
+            <span style={{ fontSize: 14 }}>{badge || '💪'}</span>
             <span>{streak}j</span>
           </div>
         )}

@@ -6,9 +6,9 @@ import Header from './components/Header';
 import { getProgramWeek, getTodayWorkoutType } from './hooks/useWorkout';
 
 const TABS = [
-  { id: 'muscu',     label: 'Muscu',    icon: '&#127947;' },
-  { id: 'nutrition', label: 'Nutrition', icon: '&#129361;' },
-  { id: 'courses',   label: 'Courses',   icon: '&#128722;' },
+  { id: 'muscu',     label: 'Muscu',    icon: '🏋️' },
+  { id: 'nutrition', label: 'Nutrition', icon: '🥑' },
+  { id: 'courses',   label: 'Courses',   icon: '🛒' },
 ];
 
 function PageWrapper({ children, tabId }) {

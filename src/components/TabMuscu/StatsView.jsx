@@ -212,7 +212,7 @@ export default function StatsView({ history }) {
   const avgVol = totalSessions > 0 ? Math.round(totalVol / totalSessions) : 0;
 
   return (
-    <div style={{ padding: 'var(--s3) var(--s4)', paddingBottom: 100 }}>
+    <div style={{ padding: 'var(--s3) var(--s4)', paddingBottom: 'calc(var(--tab-height) + env(safe-area-inset-bottom) + 80px)' }}>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>

@@ -7,11 +7,11 @@ import ObjectivesPanel from '../Objectives/ObjectivesPanel';
 import { useWorkout } from '../../hooks/useWorkout';
 
 const SUB_TABS = [
-  { id: 'session',    label: 'Seance',    icon: '&#9654;' },
-  { id: 'calendrier', label: 'Calendrier', icon: '&#128197;' },
-  { id: 'historique', label: 'Historique', icon: '&#128203;' },
-  { id: 'stats',      label: 'Stats',      icon: '&#128200;' },
-  { id: 'objectifs',  label: 'Objectifs',  icon: '&#127919;' },
+  { id: 'session',    label: 'Seance',    icon: '▶' },
+  { id: 'calendrier', label: 'Calendrier', icon: '📅' },
+  { id: 'historique', label: 'Historique', icon: '📋' },
+  { id: 'stats',      label: 'Stats',      icon: '📈' },
+  { id: 'objectifs',  label: 'Objectifs',  icon: '🎯' },
 ];
 
 export default function TabMuscu() {
@@ -33,7 +33,7 @@ export default function TabMuscu() {
 
       {subTab === 'session'    && <SessionView workout={workout} />}
       {subTab === 'calendrier' && <CalendarView />}
-      {subTab === 'historique' && <HistoryView history={workout.history} />}
+      {subTab === 'historique' && <HistoryView history={workout.history} onDelete={workout.deleteSession} />}
       {subTab === 'stats'      && <StatsView history={workout.history} />}
       {subTab === 'objectifs'  && <ObjectivesPanel />}
     </div>

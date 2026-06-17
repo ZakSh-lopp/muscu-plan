@@ -133,7 +133,8 @@ input:focus, textarea:focus, select:focus {
 }
 
 .app-header {
-  height: var(--header-height);
+  padding-top: env(safe-area-inset-top);
+  height: calc(var(--header-height) + env(safe-area-inset-top));
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;

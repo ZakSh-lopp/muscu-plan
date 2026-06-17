@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { WORKOUT_TYPES } from '../../data/workout';
 
 function computeVolume(session) {
@@ -8,19 +9,19 @@ function computeVolume(session) {
     const w = session.weights?.[ex.id] || 0;
     const repsAvg = Math.round((ex.repsMin + ex.repsMax) / 2);
     for (let i = 0; i < ex.sets; i++) {
-      if (session.sets?.[`${ex.id}_${i}`]) {
-        vol += w * repsAvg;
-      }
+      if (session.sets?.[`${ex.id}_${i}`]) vol += w * repsAvg;
     }
   });
   return vol;
 }
 
-export default function HistoryView({ history }) {
+export default function HistoryView({ history, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(null); // date string
+
   if (!history || history.length === 0) {
     return (
       <div style={{ padding: 'var(--s6)', textAlign: 'center' }}>
-        <div style={{ fontSize: 40, marginBottom: 'var(--s3)' }}>&#128203;</div>
+        <div style={{ fontSize: 40, marginBottom: 'var(--s3)' }}>📋</div>
         <div style={{ fontWeight: 700, marginBottom: 'var(--s2)' }}>Aucune seance enregistree</div>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
           Tes seances apparaitront ici apres les avoir terminees.
@@ -30,7 +31,7 @@ export default function HistoryView({ history }) {
   }
 
   return (
-    <div style={{ padding: 'var(--s4)' }}>
+    <div style={{ padding: 'var(--s4)', paddingBottom: 'calc(var(--tab-height) + env(safe-area-inset-bottom) + 16px)' }}>
       <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
         {history.length} seance{history.length > 1 ? 's' : ''} enregistree{history.length > 1 ? 's' : ''}
       </div>
@@ -45,9 +46,11 @@ export default function HistoryView({ history }) {
         const rpeAvg = rpeVals.length > 0
           ? Math.round(rpeVals.reduce((a, b) => a + b, 0) / rpeVals.length * 10) / 10
           : null;
+        const isConfirming = confirmDelete === session.date;
 
         return (
-          <div key={i} className="card" style={{ marginBottom: 'var(--s3)' }}>
+          <div key={i} className="card" style={{ marginBottom: 'var(--s3)', position: 'relative' }}>
+            {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
               <span style={{ fontSize: 24 }}>{wt?.emoji}</span>
               <div style={{ flex: 1 }}>
@@ -60,12 +63,54 @@ export default function HistoryView({ history }) {
                   color: 'var(--text-muted)', background: 'var(--surface-2)',
                   padding: '3px 8px', borderRadius: 'var(--r4)',
                 }}>
-                  &#9201; {session.duration}
+                  ⏱ {session.duration}
                 </span>
               )}
+              {/* Delete trigger */}
+              <button
+                onClick={() => setConfirmDelete(isConfirming ? null : session.date)}
+                style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: isConfirming ? 'var(--danger)' : 'var(--surface-2)',
+                  color: isConfirming ? 'white' : 'var(--text-muted)',
+                  fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+                title="Supprimer"
+              >
+                🗑
+              </button>
             </div>
 
-            {/* Metriques */}
+            {/* Confirmation */}
+            {isConfirming && (
+              <div style={{
+                background: '#ff000015', border: '1px solid var(--danger)',
+                borderRadius: 'var(--r1)', padding: 'var(--s3)',
+                marginBottom: 'var(--s3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s3)',
+              }}>
+                <span style={{ fontSize: 13, color: 'var(--danger)', fontWeight: 600 }}>
+                  Supprimer cette seance ?
+                </span>
+                <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+                  <button
+                    onClick={() => setConfirmDelete(null)}
+                    style={{ fontSize: 12, padding: '4px 12px', borderRadius: 'var(--r4)', background: 'var(--surface-2)', color: 'var(--text-secondary)' }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => { onDelete(session.date); setConfirmDelete(null); }}
+                    style={{ fontSize: 12, padding: '4px 12px', borderRadius: 'var(--r4)', background: 'var(--danger)', color: 'white', fontWeight: 700 }}
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Métriques */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--s2)', marginBottom: 'var(--s3)' }}>
               <Metric label="Series" value={checkedCount} />
               <Metric label="Volume" value={volume > 0 ? `${volume.toLocaleString()}kg` : '-'} />
