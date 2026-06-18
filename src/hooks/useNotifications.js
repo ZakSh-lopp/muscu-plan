@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { useStorage } from './useStorage';
 
 const NOTIF_TIME_KEY    = 'muscu_notif_time';
@@ -6,53 +8,41 @@ const NOTIF_ENABLED_KEY = 'muscu_notif_enabled';
 const SUPPL_ENABLED_KEY = 'muscu_suppl_notif_enabled';
 const CHANNEL_ID        = 'muscu-main';
 
-async function getPlugin() {
-  const { Capacitor } = await import('@capacitor/core');
-  if (!Capacitor.isNativePlatform()) return null;
-  const { LocalNotifications } = await import('@capacitor/local-notifications');
-  return LocalNotifications;
-}
+function isNative() { return Capacitor.isNativePlatform(); }
 
-/* Crée le channel Android (HIGH importance) — idempotent */
-async function ensureChannel(P) {
+async function ensureChannel() {
   try {
-    await P.createChannel({
-      id:          CHANNEL_ID,
-      name:        'Muscu Plan',
+    await LocalNotifications.createChannel({
+      id: CHANNEL_ID, name: 'Muscu Plan',
       description: 'Rappels seance et supplements',
-      importance:  5,          // IMPORTANCE_HIGH
-      visibility:  1,          // VISIBILITY_PUBLIC
-      sound:       'default',
-      vibration:   true,
-      lights:      true,
+      importance: 5, visibility: 1,
+      sound: 'default', vibration: true, lights: true,
     });
   } catch (e) { console.warn('createChannel:', e); }
 }
 
-/* Verifie / demande permission — gere le cas "accordee manuellement" */
-async function ensurePermission(P) {
+async function ensurePermission() {
   try {
-    const check = await P.checkPermissions();
+    const check = await LocalNotifications.checkPermissions();
     if (check.display === 'granted') return true;
-    const req = await P.requestPermissions();
+    const req = await LocalNotifications.requestPermissions();
     return req.display === 'granted';
   } catch { return false; }
 }
 
 async function scheduleDaily(hour, minute) {
+  if (!isNative()) return;
   try {
-    const P = await getPlugin();
-    if (!P) return;
-    await ensureChannel(P);
-    await P.cancel({ notifications: [{ id: 1001 }] });
+    await ensureChannel();
+    await LocalNotifications.cancel({ notifications: [{ id: 1001 }] });
     const msgs = [
       "C'est l'heure de t'entrainer ! Rappelle-toi pourquoi tu as commence.",
       "Seance du jour - tu es capable, go !",
       "Le muscle se construit avec la regularite. C'est parti !",
     ];
-    await P.schedule({ notifications: [{
+    await LocalNotifications.schedule({ notifications: [{
       id: 1001, channelId: CHANNEL_ID,
-      title: "Muscu Plan - Seance du jour",
+      title: 'Muscu Plan - Seance du jour',
       body: msgs[Math.floor(Math.random() * msgs.length)],
       schedule: { on: { hour, minute }, every: 'day', allowWhileIdle: true },
       sound: 'default', actionTypeId: '', extra: null,
@@ -61,24 +51,22 @@ async function scheduleDaily(hour, minute) {
 }
 
 async function cancelDaily() {
-  try { const P = await getPlugin(); if (P) await P.cancel({ notifications: [{ id: 1001 }] }); } catch {}
+  if (!isNative()) return;
+  try { await LocalNotifications.cancel({ notifications: [{ id: 1001 }] }); } catch {}
 }
 
-/* Notification test dans 5 secondes */
 export async function sendTestNotification() {
+  if (!isNative()) return 'Pas sur mobile';
   try {
-    const P = await getPlugin();
-    if (!P) return 'Pas sur mobile';
-    await ensureChannel(P);
-    const ok = await ensurePermission(P);
-    if (!ok) return 'Permission refusee — active les notifs dans Parametres Android > Applications > Muscu Plan';
-    const at = new Date(Date.now() + 5000);
-    await P.cancel({ notifications: [{ id: 9999 }] });
-    await P.schedule({ notifications: [{
+    await ensureChannel();
+    const ok = await ensurePermission();
+    if (!ok) return 'Permission refusee — active dans Parametres Android > Muscu Plan > Notifications';
+    await LocalNotifications.cancel({ notifications: [{ id: 9999 }] });
+    await LocalNotifications.schedule({ notifications: [{
       id: 9999, channelId: CHANNEL_ID,
       title: 'Muscu Plan - Test',
       body: 'Les notifications fonctionnent !',
-      schedule: { at, allowWhileIdle: true },
+      schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true },
       sound: 'default', actionTypeId: '', extra: null,
     }]});
     return 'ok';
@@ -92,12 +80,11 @@ const SUPPL_NOTIFS = [
 ];
 
 async function scheduleSupplements() {
+  if (!isNative()) return;
   try {
-    const P = await getPlugin();
-    if (!P) return;
-    await ensureChannel(P);
-    await P.cancel({ notifications: SUPPL_NOTIFS.map(n => ({ id: n.id })) });
-    await P.schedule({ notifications: SUPPL_NOTIFS.map(n => ({
+    await ensureChannel();
+    await LocalNotifications.cancel({ notifications: SUPPL_NOTIFS.map(n => ({ id: n.id })) });
+    await LocalNotifications.schedule({ notifications: SUPPL_NOTIFS.map(n => ({
       id: n.id, channelId: CHANNEL_ID,
       title: `Muscu Plan - ${n.title}`, body: n.body,
       schedule: { on: { hour: n.hour, minute: n.minute }, every: 'day', allowWhileIdle: true },
@@ -107,21 +94,19 @@ async function scheduleSupplements() {
 }
 
 async function cancelSupplements() {
-  try { const P = await getPlugin(); if (P) await P.cancel({ notifications: SUPPL_NOTIFS.map(n => ({ id: n.id })) }); } catch {}
+  if (!isNative()) return;
+  try { await LocalNotifications.cancel({ notifications: SUPPL_NOTIFS.map(n => ({ id: n.id })) }); } catch {}
 }
 
 export function useNotifications() {
-  const [notifTime, setNotifTime]     = useStorage(NOTIF_TIME_KEY, '09:00');
+  const [notifTime, setNotifTime]       = useStorage(NOTIF_TIME_KEY, '09:00');
   const [notifEnabled, setNotifEnabled] = useStorage(NOTIF_ENABLED_KEY, false);
   const [supplEnabled, setSupplEnabled] = useStorage(SUPPL_ENABLED_KEY, false);
   const [loading, setLoading] = useState(false);
 
   const enable = useCallback(async (time) => {
     setLoading(true);
-    const P = await getPlugin();
-    if (!P) { setLoading(false); return false; }
-    await ensureChannel(P);
-    const granted = await ensurePermission(P);
+    const granted = await ensurePermission();
     if (!granted) { setLoading(false); return false; }
     const [h, m] = time.split(':').map(Number);
     await scheduleDaily(h, m);
@@ -141,10 +126,7 @@ export function useNotifications() {
 
   const enableSupplements = useCallback(async () => {
     setLoading(true);
-    const P = await getPlugin();
-    if (!P) { setLoading(false); return false; }
-    await ensureChannel(P);
-    const granted = await ensurePermission(P);
+    const granted = await ensurePermission();
     if (!granted) { setLoading(false); return false; }
     await scheduleSupplements();
     setSupplEnabled(true); setLoading(false); return true;
