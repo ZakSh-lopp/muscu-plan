@@ -1,10 +1,10 @@
-import { Browser } from '@capacitor/browser';
-
 export default function UpdateBanner({ update, onDismiss }) {
   if (!update) return null;
 
-  async function handleInstall() {
-    await Browser.open({ url: update.downloadUrl });
+  function handleInstall() {
+    // Opens in Android default browser → downloads APK → prompts install
+    if (window.open) window.open(update.downloadUrl, '_system');
+    else location.href = update.downloadUrl;
   }
 
   return (
