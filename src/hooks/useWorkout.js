@@ -31,7 +31,7 @@ export function useWorkout() {
     });
   }, []); // eslint-disable-line
 
-  const todaySession = sessionState[today] || { sets: {}, weights: {}, rpe: {}, completed: false };
+  const todaySession = sessionState[today] || { sets: {}, weights: {}, rpe: {}, repsActual: {}, completed: false };
 
   const updateToday = useCallback((updater) => {
     setSessionState(prev => ({
@@ -53,6 +53,10 @@ export function useWorkout() {
 
   const setRpe = useCallback((exerciseId, rpe) => {
     updateToday(s => ({ ...s, rpe: { ...s.rpe, [exerciseId]: rpe } }));
+  }, [updateToday]);
+
+  const setRepsActual = useCallback((exerciseId, reps) => {
+    updateToday(s => ({ ...s, repsActual: { ...(s.repsActual || {}), [exerciseId]: reps } }));
   }, [updateToday]);
 
   const finishWorkout = useCallback((workoutType, note = '', duration = '') => {
@@ -164,7 +168,7 @@ export function useWorkout() {
     exerciseNotes, setExerciseNote,
     disabledExercises, toggleDisableExercise,
     swappedExercises, swapExercise, resetSwap,
-    getEffectiveId,
+    getEffectiveId, setRepsActual,
   };
 }
 

@@ -50,7 +50,7 @@ async function scheduleDaily(hour, minute) {
       id: 1001, channelId: CHANNEL_ID,
       title: 'Muscu Plan - Seance du jour',
       body: msgs[Math.floor(Math.random() * msgs.length)],
-      schedule: { on: { hour, minute }, every: 'day', allowWhileIdle: true },
+      schedule: { on: { hour, minute }, allowWhileIdle: true },
       sound: 'default', actionTypeId: '', extra: null,
     }]});
   } catch (e) { console.warn('scheduleDaily:', e); }
@@ -94,7 +94,7 @@ async function scheduleSupplements() {
     await P.schedule({ notifications: SUPPL_NOTIFS.map(n => ({
       id: n.id, channelId: CHANNEL_ID,
       title: `Muscu Plan - ${n.title}`, body: n.body,
-      schedule: { on: { hour: n.hour, minute: n.minute }, every: 'day', allowWhileIdle: true },
+      schedule: { on: { hour: n.hour, minute: n.minute }, allowWhileIdle: true },
       sound: 'default', actionTypeId: '', extra: null,
     }))});
   } catch (e) { console.warn('scheduleSupplements:', e); }

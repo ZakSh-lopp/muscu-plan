@@ -12,13 +12,15 @@ import PlateCalculator from './PlateCalculator';
 import GuidedSessionView from './GuidedSessionView';
 import CoachCard from './CoachCard';
 
-function computeSummary(exercises, todaySession, duration, getPR) {
+function computeSummary(exercises, todaySession, duration, getPR, getEffectiveId) {
   let totalVolume = 0, totalSetsTarget = 0, totalSetsDone = 0;
   let rpeSum = 0, rpeCount = 0;
   const prs = [];
+  const effId = getEffectiveId || (id => id);
 
   exercises.forEach(ex => {
-    const w = todaySession.weights[ex.id] || 0;
+    const eid = effId(ex.id);
+    const w = todaySession.weights[eid] || 0;
     const rpe = todaySession.rpe[ex.id];
     const repsAvg = Math.round((ex.repsMin + ex.repsMax) / 2);
     for (let i = 0; i < ex.sets; i++) {
@@ -26,7 +28,7 @@ function computeSummary(exercises, todaySession, duration, getPR) {
       if (todaySession.sets[`${ex.id}_${i}`]) { totalSetsDone++; totalVolume += w * repsAvg; }
     }
     if (rpe) { rpeSum += rpe; rpeCount++; }
-    if (getPR(ex.id)) prs.push(ex.name);
+    if (getPR(eid)) prs.push(ex.name);
   });
 
   const rpeAvg = rpeCount > 0 ? Math.round((rpeSum / rpeCount) * 10) / 10 : null;
@@ -213,7 +215,7 @@ export default function SessionView({ workout }) {
   );
 
   const summary = showFinish ? computeSummary(
-    currentWorkout.exercises, workout.todaySession, sessionTimer.formatted, workout.getPR
+    currentWorkout.exercises, workout.todaySession, sessionTimer.formatted, workout.getPR, workout.getEffectiveId
   ) : null;
 
   function handleStart() {

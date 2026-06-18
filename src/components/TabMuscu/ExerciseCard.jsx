@@ -141,7 +141,7 @@ function WarmupSets({ weight, compound }) {
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)' }}>
         {sets.map((s, i) => {
-          const w = Math.round(weight * s.pct / 10) * 2.5;
+          const w = Math.round((weight * s.pct / 100) / 2.5) * 2.5;
           return (
             <div key={i} style={{ flex: 1, textAlign: 'center', background: 'var(--surface)', borderRadius: 'var(--r1)', padding: 'var(--s2)' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{w}kg</div>
