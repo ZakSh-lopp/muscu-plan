@@ -116,7 +116,7 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
   const checkedCount = Array.from({ length: exercise.sets }, (_, i) => !!(checkedSets?.[`${exercise.id}_${i}`])).filter(Boolean).length;
   const allDone = checkedCount >= exercise.sets;
   const repsText = exercise.repsMin === exercise.repsMax ? `${exercise.repsMin}` : `${exercise.repsMin}-${exercise.repsMax}`;
-  const suggestion = workout.getWeightSuggestion(effectiveId, exercise.sets);
+  const suggestion = workout.getWeightSuggestion(effectiveId, exercise.sets, exercise.id);
   const hasAlts = !!(exercise.alternatives?.length);
   const displayName = swappedName || exercise.name;
   const restDur = exercise.restSeconds || 90;

@@ -357,7 +357,7 @@ export default function SessionView({ workout }) {
           weight={workout.todaySession.weights[workout.getEffectiveId(exercise.id)]}
           rpe={workout.todaySession.rpe[exercise.id]}
           isPR={workout.getPR(workout.getEffectiveId(exercise.id))}
-          weightSuggestion={workout.getWeightSuggestion(workout.getEffectiveId(exercise.id), exercise.sets)}
+          weightSuggestion={workout.getWeightSuggestion(workout.getEffectiveId(exercise.id), exercise.sets, exercise.id)}
           note={workout.exerciseNotes[exercise.id]}
           isDisabled={workout.disabledExercises.includes(exercise.id)}
           swappedName={workout.swappedExercises[exercise.id]}

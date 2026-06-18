@@ -88,13 +88,23 @@ export function useWorkout() {
     return currentWeight > prevMax;
   }, [todaySession.weights, history, today]);
 
-  const getWeightSuggestion = useCallback((exerciseId, totalSets) => {
+  // effectiveId : cle distincte pour les alts, historique independant de l'original
+  const getEffectiveId = useCallback((exerciseId) => {
+    const alt = swappedExercises[exerciseId];
+    if (!alt) return exerciseId;
+    return 'alt_' + alt.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  }, [swappedExercises]);
+
+  // originalId : fallback pour trouver le poids de depart quand alt sans historique
+  const getWeightSuggestion = useCallback((exerciseId, totalSets, originalId = null) => {
     const pastSessions = Array.isArray(history) ? history.filter(h => h.date !== today) : [];
     const lastWithExercise = pastSessions.find(h => h.weights?.[exerciseId] != null);
 
     if (!lastWithExercise) {
-      const startWeight = STARTING_WEIGHTS[exerciseId];
-      if (startWeight == null) return null;
+      // Pour les alts, utiliser le poids de depart de l'exercice original comme base
+      const startWeight = STARTING_WEIGHTS[exerciseId] ??
+        (originalId != null ? STARTING_WEIGHTS[originalId] : undefined) ??
+        20;
       return {
         lastWeight: null, suggestion: startWeight, delta: 0,
         reason: startWeight === 0 ? 'Poids du corps' : 'Suggestion depart', isDefault: true,
@@ -147,13 +157,6 @@ export function useWorkout() {
       return next;
     });
   }, [setSwappedExercises]);
-
-  // Cle de stockage distincte pour les alternatives : historique independant de l'original
-  const getEffectiveId = useCallback((exerciseId) => {
-    const alt = swappedExercises[exerciseId];
-    if (!alt) return exerciseId;
-    return 'alt_' + alt.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-  }, [swappedExercises]);
 
   return {
     todaySession, toggleSet, setWeight, setRpe, finishWorkout,
