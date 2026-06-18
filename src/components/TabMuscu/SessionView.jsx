@@ -3,7 +3,7 @@ import { WORKOUT_TYPES } from '../../data/workout';
 import { useSessionTimer, useRestTimer } from '../../hooks/useTimer';
 import { getTodayWorkoutType } from '../../hooks/useWorkout';
 import { useCoach } from '../../hooks/useCoach';
-import { useNotifications } from '../../hooks/useNotifications';
+import { useNotifications, sendTestNotification } from '../../hooks/useNotifications';
 import { useStorage, STORAGE_KEYS } from '../../hooks/useStorage';
 import ExerciseCard from './ExerciseCard';
 import SupplementTracker from './SupplementTracker';
@@ -153,7 +153,17 @@ function NotifSettingsModal({ onClose }) {
             {result}
           </div>
         )}
-        <button className="btn-secondary" onClick={onClose} style={{ width: '100%', marginTop: 'var(--s2)' }}>Fermer</button>
+        <button
+          onClick={async () => {
+            setResult('Envoi dans 5 secondes...');
+            const r = await sendTestNotification();
+            setResult(r === 'ok' ? '✓ Notif test envoyee ! Verif dans 5s' : r);
+          }}
+          style={{ width: '100%', padding: 'var(--s2)', borderRadius: 'var(--r2)', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: 13, marginBottom: 'var(--s2)' }}
+        >
+          🔔 Tester les notifs (dans 5s)
+        </button>
+        <button className="btn-secondary" onClick={onClose} style={{ width: '100%' }}>Fermer</button>
       </div>
     </div>
   );
