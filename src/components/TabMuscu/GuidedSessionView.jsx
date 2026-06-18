@@ -75,7 +75,7 @@ function WeightPad({ value, onChange, onClose }) {
   }
   const keys = ['1','2','3','⌫','4','5','6','OK','7','8','9','.','','0','',''];
   return createPortal(
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9500, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end' }}>
       <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--surface)', borderRadius: '18px 18px 0 0', padding: 'var(--s4)', paddingBottom: 'max(var(--s4), env(safe-area-inset-bottom))' }}>
         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Kilogrammes</div>
         <div style={{ textAlign: 'center', fontSize: 40, fontWeight: 900, color: 'var(--accent)', marginBottom: 'var(--s4)', minHeight: 50 }}>{str || '0'} kg</div>
