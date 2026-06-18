@@ -354,15 +354,15 @@ export default function SessionView({ workout }) {
           exercise={exercise}
           sessionStarted={sessionStarted}
           checkedSets={workout.todaySession.sets}
-          weight={workout.todaySession.weights[exercise.id]}
+          weight={workout.todaySession.weights[workout.getEffectiveId(exercise.id)]}
           rpe={workout.todaySession.rpe[exercise.id]}
-          isPR={workout.getPR(exercise.id)}
-          weightSuggestion={workout.getWeightSuggestion(exercise.id, exercise.sets)}
+          isPR={workout.getPR(workout.getEffectiveId(exercise.id))}
+          weightSuggestion={workout.getWeightSuggestion(workout.getEffectiveId(exercise.id), exercise.sets)}
           note={workout.exerciseNotes[exercise.id]}
           isDisabled={workout.disabledExercises.includes(exercise.id)}
           swappedName={workout.swappedExercises[exercise.id]}
           onToggleSet={(setIdx) => { workout.toggleSet(exercise.id, setIdx); handleSetCheck(exercise); }}
-          onWeightChange={(kg) => workout.setWeight(exercise.id, kg)}
+          onWeightChange={(kg) => workout.setWeight(workout.getEffectiveId(exercise.id), kg)}
           onRpeChange={(rpe) => workout.setRpe(exercise.id, rpe)}
           onNoteChange={workout.setExerciseNote}
           onToggleDisable={workout.toggleDisableExercise}

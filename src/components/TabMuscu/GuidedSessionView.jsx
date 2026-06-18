@@ -110,12 +110,13 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
   const [showTip, setShowTip] = useState(false);
   const [showWeightPad, setShowWeightPad] = useState(false);
 
-  const weight = workout.todaySession.weights[exercise.id] || 0;
+  const effectiveId = workout.getEffectiveId ? workout.getEffectiveId(exercise.id) : exercise.id;
+  const weight = workout.todaySession.weights[effectiveId] || 0;
   const checkedSets = workout.todaySession.sets;
   const checkedCount = Array.from({ length: exercise.sets }, (_, i) => !!(checkedSets?.[`${exercise.id}_${i}`])).filter(Boolean).length;
   const allDone = checkedCount >= exercise.sets;
   const repsText = exercise.repsMin === exercise.repsMax ? `${exercise.repsMin}` : `${exercise.repsMin}-${exercise.repsMax}`;
-  const suggestion = workout.getWeightSuggestion(exercise.id, exercise.sets);
+  const suggestion = workout.getWeightSuggestion(effectiveId, exercise.sets);
   const hasAlts = !!(exercise.alternatives?.length);
   const displayName = swappedName || exercise.name;
   const restDur = exercise.restSeconds || 90;
@@ -180,7 +181,7 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
         </button>
       </div>
 
-      {showWeightPad && <WeightPad value={weight} onChange={kg => workout.setWeight(exercise.id, kg)} onClose={() => setShowWeightPad(false)} />}
+      {showWeightPad && <WeightPad value={weight} onChange={kg => workout.setWeight(effectiveId, kg)} onClose={() => setShowWeightPad(false)} />}
     </div>
   );
 }

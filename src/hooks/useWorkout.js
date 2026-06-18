@@ -148,12 +148,20 @@ export function useWorkout() {
     });
   }, [setSwappedExercises]);
 
+  // Cle de stockage distincte pour les alternatives : historique independant de l'original
+  const getEffectiveId = useCallback((exerciseId) => {
+    const alt = swappedExercises[exerciseId];
+    if (!alt) return exerciseId;
+    return 'alt_' + alt.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  }, [swappedExercises]);
+
   return {
     todaySession, toggleSet, setWeight, setRpe, finishWorkout,
     getPR, getWeightSuggestion, deleteSession, history,
     exerciseNotes, setExerciseNote,
     disabledExercises, toggleDisableExercise,
     swappedExercises, swapExercise, resetSwap,
+    getEffectiveId,
   };
 }
 
