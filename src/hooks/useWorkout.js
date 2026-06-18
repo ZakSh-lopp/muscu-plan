@@ -4,10 +4,10 @@ import { PROGRAM_START, DAY_TYPES } from '../data/workout';
 
 const STARTING_WEIGHTS = {
   squat: 60, bench_press: 50, barbell_row: 50, hip_thrust: 60,
-  ohp_a: 30, curl_bar_a: 20, leg_press_b: 80, incline_press_b: 40,
-  pulldown_b: 45, rdl_b: 50, lateral_b: 8, hammer_b: 14, calf_b: 40,
-  lunges_c: 20, dips_c: 0, cable_row_c: 40, leg_curl_c: 25,
-  leg_ext_c: 30, arnold_c: 12, facepull_c: 12,
+  ohp_a: 12, curl_bar_a: 20, leg_press_b: 80, incline_press_b: 30,
+  pulldown_b: 40, rdl_b: 40, lateral_b: 6, triceps_b: 18,
+  lunges_c: 14, dips_c: 0, cable_row_c: 35, leg_curl_c: 25,
+  leg_ext_c: 25, facepull_c: 12,
 };
 
 export function useWorkout() {

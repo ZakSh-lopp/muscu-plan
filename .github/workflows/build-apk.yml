@@ -36,15 +36,24 @@ jobs:
       - name: Capacitor sync
         run: npx cap sync android
 
-      - name: Build debug APK
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/muscu-release.keystore
+
+      - name: Build release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=../app/muscu-release.keystore \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
+            --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: muscu-plan-debug-${{ github.run_number }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: muscu-plan-v${{ github.run_number }}
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30

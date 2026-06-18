@@ -51,6 +51,53 @@ function AltImage({ name }) {
   );
 }
 
+// Miniature cliquable pour swap rapide (1 tap dans le header)
+function QuickAltThumb({ alt, isCurrent, onSwap }) {
+  const frames = getAltFrames(alt.name);
+  const [frame, setFrame] = useState(0);
+  const [err, setErr] = useState(false);
+  const timerRef = useRef(null);
+  useEffect(() => {
+    if (frames.length >= 2) {
+      timerRef.current = setInterval(() => setFrame(f => (f + 1) % 2), 900);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [frames.length]);
+
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onSwap(); }}
+      title={alt.name}
+      style={{
+        width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0, padding: 0,
+        border: `2px solid ${isCurrent ? 'var(--accent)' : 'var(--border)'}`,
+        background: isCurrent ? 'var(--accent-dim)' : 'var(--surface-2)',
+        position: 'relative',
+        boxShadow: isCurrent ? '0 0 0 2px var(--accent)' : 'none',
+      }}
+    >
+      {frames.length > 0 && !err ? (
+        <img
+          src={frames[frame]}
+          alt={alt.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={() => setErr(true)}
+        />
+      ) : (
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          {alt.name.slice(0, 2)}
+        </span>
+      )}
+      {isCurrent && (
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: 'var(--accent)', height: 3,
+        }} />
+      )}
+    </button>
+  );
+}
+
 function OneRMBadge({ weight, repsMin, repsMax }) {
   if (!weight || weight <= 0) return null;
   const reps = Math.round((repsMin + repsMax) / 2);
@@ -136,30 +183,45 @@ function NoteModal({ exerciseName, currentNote, onSave, onClose }) {
 function SwapModal({ exercise, currentSwap, onSwap, onReset, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxHeight: '85vh', overflowY: 'auto' }}>
         <div className="modal-handle" />
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 'var(--s4)' }}>Remplacer — {exercise.name}</div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Choisir une alternative</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 'var(--s4)' }}>{exercise.name}</div>
+
         {currentSwap && (
-          <button onClick={() => { onReset(); onClose(); }} style={{ width: '100%', marginBottom: 'var(--s3)', padding: 'var(--s3)', borderRadius: 'var(--r2)', border: '1.5px solid var(--danger)', color: 'var(--danger)', background: 'transparent', fontWeight: 600, fontSize: 14 }}>
-            Restaurer l&apos;original
+          <button onClick={() => { onReset(); onClose(); }} style={{
+            width: '100%', marginBottom: 'var(--s3)', padding: 'var(--s3)',
+            borderRadius: 'var(--r2)', border: '1.5px solid var(--danger)',
+            color: 'var(--danger)', background: 'transparent', fontWeight: 600, fontSize: 14,
+          }}>
+            ↩ Revenir a l&apos;exercice original
           </button>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-          {exercise.alternatives.map((alt, i) => (
-            <button key={i} onClick={() => { onSwap(alt.name); onClose(); }} style={{
-              display: 'flex', alignItems: 'center', gap: 'var(--s3)',
-              padding: 'var(--s3)', borderRadius: 'var(--r2)',
-              border: `1.5px solid ${currentSwap === alt.name ? 'var(--accent)' : 'var(--border)'}`,
-              background: currentSwap === alt.name ? 'var(--accent-dim)' : 'var(--surface)',
-              textAlign: 'left',
-            }}>
-              <AltImage name={alt.name} />
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{alt.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{alt.muscle}</div>
-              </div>
-            </button>
-          ))}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
+          {exercise.alternatives.map((alt, i) => {
+            const isSelected = currentSwap === alt.name;
+            return (
+              <button key={i} onClick={() => { onSwap(alt.name); onClose(); }} style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--s3)',
+                padding: 'var(--s3)', borderRadius: 'var(--r2)',
+                border: `2px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                background: isSelected ? 'var(--accent-dim)' : 'var(--surface)',
+                textAlign: 'left',
+              }}>
+                {/* Image */}
+                <div style={{ width: 52, height: 52, borderRadius: 'var(--r1)', overflow: 'hidden', flexShrink: 0, background: 'var(--surface-2)', border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <AltImage name={alt.name} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: isSelected ? 'var(--accent)' : 'var(--text-primary)' }}>
+                    {isSelected && '✓ '}{alt.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{alt.muscle}</div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -267,40 +329,75 @@ export default function ExerciseCard({
         position: 'relative',
       }}>
         {/* En-tete */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
-          <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setExpanded(e => !e)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, fontSize: 15 }}>{displayName}</span>
-              {swappedName && <span style={{ fontSize: 10, background: 'var(--warning)', color: '#000', borderRadius: 4, padding: '1px 5px', fontWeight: 700 }}>SWAP</span>}
-              {isPR && <span className="badge badge-pr pr-badge">PR</span>}
-              {note && <span title={note} style={{ fontSize: 14 }}>📝</span>}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-              {exercise.muscle} &middot; {exercise.sets}x{exercise.repsMin === exercise.repsMax ? exercise.repsMin : `${exercise.repsMin}-${exercise.repsMax}`}
-              {exercise.restSeconds && <span style={{ color: 'var(--text-muted)' }}> &middot; {exercise.restSeconds}s repos</span>}
-            </div>
-            {!sessionStarted && weightSuggestion && (
-              <div style={{ fontSize: 11, marginTop: 4, fontWeight: 600, color: weightSuggestion.isDefault ? 'var(--accent)' : weightSuggestion.delta > 0 ? 'var(--success)' : weightSuggestion.delta < 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
-                {getSuggestionText(weightSuggestion)}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
+            <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setExpanded(e => !e)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: 15 }}>{displayName}</span>
+                {swappedName && <span style={{ fontSize: 10, background: 'var(--warning)', color: '#000', borderRadius: 4, padding: '1px 5px', fontWeight: 700 }}>SWAP</span>}
+                {isPR && <span className="badge badge-pr pr-badge">PR</span>}
+                {note && <span title={note} style={{ fontSize: 14 }}>📝</span>}
               </div>
-            )}
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                {exercise.muscle} &middot; {exercise.sets}x{exercise.repsMin === exercise.repsMax ? exercise.repsMin : `${exercise.repsMin}-${exercise.repsMax}`}
+                {exercise.restSeconds && <span style={{ color: 'var(--text-muted)' }}> &middot; {exercise.restSeconds}s repos</span>}
+              </div>
+              {weightSuggestion && (
+                <div style={{ fontSize: 11, marginTop: 4, fontWeight: 600, color: weightSuggestion.isDefault ? 'var(--accent)' : weightSuggestion.delta > 0 ? 'var(--success)' : weightSuggestion.delta < 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                  {getSuggestionText(weightSuggestion)}
+                </div>
+              )}
+            </div>
+
+            {/* Sets rapides */}
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              {setsChecked.map((done, i) => (
+                <button key={i} className={`set-checkbox ${done ? 'checked' : ''}`}
+                  onClick={e => { e.stopPropagation(); if (sessionStarted) onToggleSet(i); }}
+                  style={{ opacity: sessionStarted ? 1 : 0.4 }}>
+                  {done ? '✓' : i + 1}
+                </button>
+              ))}
+            </div>
+
+            {/* Bouton options */}
+            <button onClick={e => { e.stopPropagation(); setShowOptions(v => !v); }} style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0, padding: '0 4px', background: 'none' }}>
+              ⋮
+            </button>
           </div>
 
-          {/* Sets rapides */}
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            {setsChecked.map((done, i) => (
-              <button key={i} className={`set-checkbox ${done ? 'checked' : ''}`}
-                onClick={e => { e.stopPropagation(); if (sessionStarted) onToggleSet(i); }}
-                style={{ opacity: sessionStarted ? 1 : 0.4 }}>
-                {done ? '✓' : i + 1}
-              </button>
-            ))}
-          </div>
-
-          {/* Bouton options */}
-          <button onClick={e => { e.stopPropagation(); setShowOptions(v => !v); }} style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0, padding: '0 4px', background: 'none' }}>
-            ⋮
-          </button>
+          {/* Alternatives rapides — 1 tap pour swapper */}
+          {exercise.alternatives && exercise.alternatives.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, flexShrink: 0 }}>
+                {swappedName ? '⇆' : 'Alt:'}
+              </span>
+              <div style={{ display: 'flex', gap: 5, overflowX: 'auto', flexWrap: 'nowrap' }}>
+                {/* Option "Original" quand swappé */}
+                {swappedName && (
+                  <button
+                    onClick={e => { e.stopPropagation(); onResetSwap(exercise.id); }}
+                    title="Revenir à l'original"
+                    style={{
+                      height: 40, paddingLeft: 8, paddingRight: 8, borderRadius: 8, flexShrink: 0,
+                      border: '2px solid var(--border)', background: 'var(--surface-2)',
+                      fontSize: 10, color: 'var(--text-muted)', fontWeight: 600,
+                    }}
+                  >
+                    ↩ Orig.
+                  </button>
+                )}
+                {exercise.alternatives.map((alt, i) => (
+                  <QuickAltThumb
+                    key={i}
+                    alt={alt}
+                    isCurrent={swappedName === alt.name}
+                    onSwap={() => onSwap(exercise.id, alt.name)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Contenu expande */}
@@ -370,17 +467,33 @@ export default function ExerciseCard({
             {/* Alternatives */}
             {exercise.alternatives && exercise.alternatives.length > 0 && (
               <div style={{ marginTop: 'var(--s4)' }}>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--s2)' }}>Alternatives</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--s2)' }}>
+                  Alternatives — tap pour remplacer
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-                  {exercise.alternatives.map((alt, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', background: 'var(--surface-2)', borderRadius: 'var(--r1)', padding: 'var(--s2)' }}>
-                      <AltImage name={alt.name} />
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{alt.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{alt.muscle}</div>
-                      </div>
-                    </div>
-                  ))}
+                  {exercise.alternatives.map((alt, i) => {
+                    const isSelected = swappedName === alt.name;
+                    return (
+                      <button key={i} onClick={() => { if (isSelected) { onResetSwap(exercise.id); } else { onSwap(exercise.id, alt.name); } }} style={{
+                        display: 'flex', alignItems: 'center', gap: 'var(--s2)',
+                        background: isSelected ? 'var(--accent-dim)' : 'var(--surface-2)',
+                        borderRadius: 'var(--r1)', padding: 'var(--s2)',
+                        border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                        textAlign: 'left',
+                      }}>
+                        <AltImage name={alt.name} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? 'var(--accent)' : 'var(--text-primary)' }}>
+                            {isSelected && '✓ '}{alt.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{alt.muscle}</div>
+                        </div>
+                        {isSelected && (
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>↩ annuler</span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

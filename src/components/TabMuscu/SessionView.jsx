@@ -88,7 +88,7 @@ function NotifSettingsModal({ onClose }) {
       setResult('Notifications desactivees');
     } else {
       const ok = await enable(time);
-      setResult(ok ? 'Rappel programme a ' + time : 'Permission refusee — activez les notifications dans les parametres Android');
+      setResult(ok ? 'Rappel programme a ' + time : 'Permission refusee. Allez dans Parametres Android > Applications > Muscu Plan > Notifications pour les activer.');
     }
   }
 
@@ -134,15 +134,29 @@ function NotifSettingsModal({ onClose }) {
 
 export default function SessionView({ workout }) {
   const todayType = getTodayWorkoutType();
-  const [selectedType, setSelectedType] = useState(todayType);
-  const [sessionStarted, setSessionStarted] = useState(false);
+
+  // Timer AVANT les useState — on s'en sert pour initialiser sessionStarted
+  const sessionTimer = useSessionTimer();
+
+  // Persist selectedType so it survives app restart
+  const [selectedType, setSelectedTypeState] = useState(() => {
+    try {
+      const s = localStorage.getItem('muscu_active_workout_type');
+      return s || todayType;
+    } catch { return todayType; }
+  });
+  function setSelectedType(t) {
+    setSelectedTypeState(t);
+    try { localStorage.setItem('muscu_active_workout_type', t); } catch {}
+  }
+
+  // Init depuis le timer (SESSION_START_TS en localStorage) → survit au kill du WebView
+  const [sessionStarted, setSessionStarted] = useState(sessionTimer.running);
   const [sessionNote, setSessionNote] = useState('');
   const [showFinish, setShowFinish] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showGuided, setShowGuided] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
-
-  const sessionTimer = useSessionTimer();
   const restTimer = useRestTimer();
 
   // Hydratation pour le coach
@@ -165,13 +179,18 @@ export default function SessionView({ workout }) {
     currentWorkout.exercises, workout.todaySession, sessionTimer.formatted, workout.getPR
   ) : null;
 
-  function handleStart() { setSessionStarted(true); sessionTimer.start(); }
+  function handleStart() {
+    setSessionStarted(true);
+    sessionTimer.start();
+    try { localStorage.setItem('muscu_active_workout_type', selectedType); } catch {}
+  }
 
   function handleFinish() {
     workout.finishWorkout(selectedType, sessionNote, sessionTimer.formatted);
     sessionTimer.stop();
     setSessionStarted(false);
     setShowFinish(false);
+    try { localStorage.removeItem('muscu_active_workout_type'); } catch {}
   }
 
   function handleSetCheck(exercise) {
