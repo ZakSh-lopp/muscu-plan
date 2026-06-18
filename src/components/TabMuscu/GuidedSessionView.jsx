@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getExerciseFrames, getAltFrames } from '../../data/exerciseMedia';
 
 /* ─── Image animée + overlay ↻ / ℹ ──────────────────────────────────── */
-function ExerciseImage({ exerciseId, exerciseName, swappedAlt, hasAlts, onCycleAlt, onToggleTip }) {
+function ExerciseImage({ exerciseId, exerciseName, swappedAlt, hasAlts, onCycleAlt, tip, showTip, onToggleTip }) {
   const [frame, setFrame] = useState(0);
   const [error, setError] = useState(false);
   const ref = useRef(null);
@@ -18,7 +18,7 @@ function ExerciseImage({ exerciseId, exerciseName, swappedAlt, hasAlts, onCycleA
   }, [frames.length, exerciseId, swappedAlt]);
 
   return (
-    <div style={{ position: 'relative', height: 220, flexShrink: 0, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', height: 190, flexShrink: 0, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
       {frames.length > 0 && !error ? (
         <img src={frames[frame]} alt={exerciseName}
           style={{ height: '100%', width: '100%', objectFit: 'contain' }}
@@ -26,6 +26,7 @@ function ExerciseImage({ exerciseId, exerciseName, swappedAlt, hasAlts, onCycleA
       ) : (
         <span style={{ fontSize: 56, opacity: 0.25 }}>🏋️</span>
       )}
+
       {/* Boutons overlay */}
       <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
         {hasAlts && (
@@ -36,17 +37,33 @@ function ExerciseImage({ exerciseId, exerciseName, swappedAlt, hasAlts, onCycleA
             boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
           }}>↻</button>
         )}
-        <button onClick={onToggleTip} title="Conseil" style={{
-          width: 36, height: 36, borderRadius: 8,
-          background: 'rgba(255,255,255,0.88)', border: '1.5px solid var(--border)',
-          fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-        }}>ℹ</button>
+        {tip && (
+          <button onClick={onToggleTip} title="Conseil" style={{
+            width: 36, height: 36, borderRadius: 8,
+            background: showTip ? 'var(--accent)' : 'rgba(255,255,255,0.88)',
+            border: '1.5px solid var(--border)',
+            fontSize: 15, color: showTip ? 'white' : 'inherit',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          }}>ℹ</button>
+        )}
       </div>
-      {/* Badge SWAP */}
+
+      {/* Badge ALT */}
       {swappedAlt && (
         <div style={{ position: 'absolute', top: 8, left: 8, background: '#f59e0b', color: '#000', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>
           ALT
+        </div>
+      )}
+
+      {/* Tip overlay flottant */}
+      {showTip && tip && (
+        <div style={{
+          position: 'absolute', bottom: 8, left: 8, right: 52,
+          background: 'rgba(15,15,20,0.92)', borderRadius: 10, padding: '8px 12px',
+          borderLeft: '3px solid var(--accent)',
+        }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>💡 {tip}</div>
         </div>
       )}
     </div>
@@ -56,9 +73,9 @@ function ExerciseImage({ exerciseId, exerciseName, swappedAlt, hasAlts, onCycleA
 /* ─── Cercle générique ───────────────────────────────────────────────── */
 function Circle({ value, sub, label, color, pulse, onClick }) {
   return (
-    <div onClick={onClick} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: onClick ? 'pointer' : 'default' }}>
+    <div onClick={onClick} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: onClick ? 'pointer' : 'default' }}>
       <div style={{
-        width: 76, height: 76, borderRadius: '50%',
+        width: 74, height: 74, borderRadius: '50%',
         border: `2.5px solid ${color || 'var(--border)'}`,
         background: pulse ? 'rgba(99,102,241,0.09)' : 'transparent',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -121,7 +138,7 @@ function RestScreen({ restTimer }) {
   );
 }
 
-/* ─── Vue exercice ───────────────────────────────────────────────────── */
+/* ─── Vue exercice — layout fixe sans scroll ─────────────────────────── */
 function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTimer, onCycleAlt }) {
   const [showTip, setShowTip] = useState(false);
   const [showWeightPad, setShowWeightPad] = useState(false);
@@ -155,47 +172,42 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      {/* Image */}
+
+      {/* Image avec tip overlay — pas de scroll */}
       <ExerciseImage
         exerciseId={exercise.id}
         exerciseName={displayName}
         swappedAlt={swappedName}
         hasAlts={hasAlts}
+        tip={exercise.tips}
+        showTip={showTip}
         onCycleAlt={onCycleAlt}
         onToggleTip={() => setShowTip(v => !v)}
       />
 
-      {/* Contenu scrollable */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
+      {/* Zone info compacte — PAS de scroll */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '10px var(--s4) 0' }}>
+
         {/* Nom + muscle + suggestion */}
-        <div style={{ padding: 'var(--s3) var(--s4) 0' }}>
-          <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 2 }}>{displayName}</div>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{exercise.muscle}</div>
+        <div style={{ flexShrink: 0, marginBottom: 6 }}>
+          <div style={{ fontWeight: 800, fontSize: 17, lineHeight: 1.2 }}>{displayName}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{exercise.muscle}</div>
           {suggestion && (
-            <div style={{ fontSize: 12, fontWeight: 700, color: suggestion.isDefault ? 'var(--accent)' : suggestion.delta > 0 ? 'var(--success)' : suggestion.delta < 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, marginTop: 3, color: suggestion.isDefault ? 'var(--accent)' : suggestion.delta > 0 ? 'var(--success)' : suggestion.delta < 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
               {suggestion.isDefault ? '★' : suggestion.delta > 0 ? '↑' : suggestion.delta < 0 ? '↓' : '→'} Poids recommandé : {suggestion.suggestion > 0 ? `${suggestion.suggestion} kg` : 'Poids du corps'}
+            </div>
+          )}
+          {swappedName && (
+            <div style={{ fontSize: 11, color: '#f59e0b', fontWeight: 700, marginTop: 2 }}>
+              ⇆ {swappedName}
+              <button onClick={() => workout.resetSwap(exercise.id)} style={{ marginLeft: 8, fontSize: 10, color: 'var(--text-muted)', background: 'none' }}>↩</button>
             </div>
           )}
         </div>
 
-        {/* Tip inline */}
-        {showTip && exercise.tips && (
-          <div style={{ margin: 'var(--s2) var(--s4)', background: 'rgba(99,102,241,0.08)', borderRadius: 'var(--r1)', padding: 'var(--s3)', borderLeft: '3px solid var(--accent)' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>💡 {exercise.tips}</div>
-          </div>
-        )}
-
-        {/* Alt actif */}
-        {swappedName && (
-          <div style={{ margin: '4px var(--s4)', fontSize: 11, color: '#f59e0b', fontWeight: 700 }}>
-            ⇆ Alternative : {swappedName}
-            <button onClick={() => workout.resetSwap(exercise.id)} style={{ marginLeft: 8, fontSize: 10, color: 'var(--text-muted)', background: 'none' }}>↩ original</button>
-          </div>
-        )}
-
         {/* 3 cercles */}
-        <div style={{ display: 'flex', justifyContent: 'space-around', padding: 'var(--s3) var(--s4)' }}>
-          <Circle value={repsText} label={'Répétitions\nrequises'} color="var(--text-secondary)" />
+        <div style={{ display: 'flex', justifyContent: 'space-around', flexShrink: 0, paddingBottom: 8 }}>
+          <Circle value={repsText} label={"Répétitions\nrequises"} color="var(--text-secondary)" />
           <Circle
             value={restDisplay}
             sub={restTimer.active ? 'SKIP' : undefined}
@@ -204,11 +216,11 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
             pulse={restTimer.active}
             onClick={restTimer.active ? restTimer.skipRest : undefined}
           />
-          <Circle value={`${checkedCount}/${exercise.sets}`} label={'Séries\neffectuées'} color={seriesColor} />
+          <Circle value={`${checkedCount}/${exercise.sets}`} label={"Séries\neffectuées"} color={seriesColor} />
         </div>
 
-        {/* Barre de progression */}
-        <div style={{ padding: '0 var(--s4)' }}>
+        {/* Barre de progression séries */}
+        <div style={{ flexShrink: 0, marginBottom: 0 }}>
           <div style={{ display: 'flex', gap: 6 }}>
             {Array.from({ length: exercise.sets }, (_, i) => {
               const done = !!(checkedSets && checkedSets[`${exercise.id}_${i}`]);
@@ -224,7 +236,7 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
         </div>
       </div>
 
-      {/* Barre d'action bas — [Kilogrammes] [Répétitions] [+] */}
+      {/* Barre d'action bas — fixe en bas */}
       <div style={{
         flexShrink: 0, borderTop: '1px solid var(--border)', background: 'var(--surface)',
         padding: 'var(--s3) var(--s4)',
@@ -256,10 +268,10 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
           disabled={!sessionStarted || allDone}
           style={{
             width: 56, borderRadius: 'var(--r2)', flexShrink: 0,
-            background: (sessionStarted && !allDone) ? 'var(--accent)' : allDone ? 'var(--success)' : 'var(--border)',
+            background: allDone ? 'var(--success)' : (sessionStarted ? '#10b981' : 'var(--border)'),
             color: 'white', fontSize: allDone ? 22 : 32, fontWeight: 900,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: (sessionStarted && !allDone) ? '0 4px 14px rgba(99,102,241,0.4)' : 'none',
+            boxShadow: (sessionStarted && !allDone) ? '0 4px 14px rgba(16,185,129,0.45)' : 'none',
             transition: 'all 0.2s',
           }}
         >
@@ -299,15 +311,16 @@ export default function GuidedSessionView({ exercises, workout, sessionStarted, 
     const cur = workout.swappedExercises?.[exercise.id];
     const curIdx = cur ? alts.findIndex(a => a.name === cur) : -1;
     const nextIdx = curIdx + 1;
-    if (nextIdx >= alts.length) {
-      workout.resetSwap(exercise.id);
-    } else {
-      workout.swapExercise(exercise.id, alts[nextIdx].name);
-    }
+    if (nextIdx >= alts.length) workout.resetSwap(exercise.id);
+    else workout.swapExercise(exercise.id, alts[nextIdx].name);
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 150,
+      background: 'var(--bg)', display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',  /* ← aucun scroll sur la page entière */
+    }}>
 
       {/* ── Header ── */}
       <div style={{
@@ -335,7 +348,7 @@ export default function GuidedSessionView({ exercises, workout, sessionStarted, 
         </div>
       </div>
 
-      {/* ── Progress bar ── */}
+      {/* ── Barre progression exercices ── */}
       <div style={{ display: 'flex', gap: 3, padding: '5px var(--s4)', background: 'var(--surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         {exercises.map((_, i) => (
           <div key={i} onClick={() => setCurrentIdx(i)} style={{
@@ -346,7 +359,7 @@ export default function GuidedSessionView({ exercises, workout, sessionStarted, 
         ))}
       </div>
 
-      {/* ── Corps ── */}
+      {/* ── Corps — flex: 1 overflow hidden = pas de scroll ── */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {restTimer.active ? (
           <RestScreen restTimer={restTimer} />

@@ -1,29 +1,31 @@
 import { useState, useCallback } from 'react';
-import { useStorage, STORAGE_KEYS } from './useStorage';
+import { useStorage } from './useStorage';
 
-// Clé de stockage pour l'heure de notification choisie
 const NOTIF_TIME_KEY = 'muscu_notif_time';
 const NOTIF_ENABLED_KEY = 'muscu_notif_enabled';
+const SUPPL_ENABLED_KEY = 'muscu_suppl_notif_enabled';
+
+async function getPlugin() {
+  const { Capacitor } = await import('@capacitor/core');
+  if (!Capacitor.isNativePlatform()) return null;
+  const { LocalNotifications } = await import('@capacitor/local-notifications');
+  return LocalNotifications;
+}
 
 async function requestPermission() {
   try {
-    const { Capacitor } = await import('@capacitor/core');
-    if (!Capacitor.isNativePlatform()) return false;
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    const perm = await LocalNotifications.requestPermissions();
+    const P = await getPlugin();
+    if (!P) return false;
+    const perm = await P.requestPermissions();
     return perm.display === 'granted';
-  } catch (e) { return false; }
+  } catch { return false; }
 }
 
 async function scheduleDaily(hour, minute) {
   try {
-    const { Capacitor } = await import('@capacitor/core');
-    if (!Capacitor.isNativePlatform()) return;
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-
-    // Annuler les notifs existantes avant de replanifier
-    await LocalNotifications.cancel({ notifications: [{ id: 1001 }] });
-
+    const P = await getPlugin();
+    if (!P) return;
+    await P.cancel({ notifications: [{ id: 1001 }] });
     const messages = [
       "C'est l'heure de t'entrainer ! Rappelle-toi pourquoi tu as commence.",
       "Seance du jour - tu es capable, go !",
@@ -31,46 +33,64 @@ async function scheduleDaily(hour, minute) {
       "Une seance de plus = un pas vers ton objectif.",
     ];
     const body = messages[Math.floor(Math.random() * messages.length)];
-
-    await LocalNotifications.schedule({
-      notifications: [{
-        id: 1001,
-        title: "Muscu Plan - Seance du jour",
-        body,
-        schedule: {
-          on: { hour, minute },
-          every: 'day',
-          allowWhileIdle: true,
-        },
-        sound: null,
-        actionTypeId: '',
-        extra: null,
-      }],
-    });
-  } catch (e) { console.warn('Notification schedule error:', e); }
+    await P.schedule({ notifications: [{
+      id: 1001, title: "Muscu Plan - Seance du jour", body,
+      schedule: { on: { hour, minute }, every: 'day', allowWhileIdle: true },
+      sound: null, actionTypeId: '', extra: null,
+    }]});
+  } catch (e) { console.warn('scheduleDaily error:', e); }
 }
 
 async function cancelDaily() {
   try {
-    const { Capacitor } = await import('@capacitor/core');
-    if (!Capacitor.isNativePlatform()) return;
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    await LocalNotifications.cancel({ notifications: [{ id: 1001 }] });
-  } catch (e) {}
+    const P = await getPlugin();
+    if (!P) return;
+    await P.cancel({ notifications: [{ id: 1001 }] });
+  } catch {}
 }
 
+/* ── Rappels suppléments ──────────────────────────────────────────────── */
+const SUPPL_NOTIFS = [
+  { id: 2001, hour: 8,  minute: 0,  title: 'Muscu Plan - Supplements matin',
+    body: 'Creatine + Omega 3 + Vitamine D3 a prendre maintenant !' },
+  { id: 2002, hour: 13, minute: 0,  title: 'Muscu Plan - Supplement midi',
+    body: 'Pense a ton Omega 3 du midi.' },
+  { id: 2003, hour: 21, minute: 0,  title: 'Muscu Plan - Supplements soir',
+    body: 'Omega 3 + Zinc/Magnesium avant de dormir !' },
+];
+
+async function scheduleSupplements() {
+  try {
+    const P = await getPlugin();
+    if (!P) return;
+    await P.cancel({ notifications: SUPPL_NOTIFS.map(n => ({ id: n.id })) });
+    await P.schedule({ notifications: SUPPL_NOTIFS.map(n => ({
+      id: n.id, title: n.title, body: n.body,
+      schedule: { on: { hour: n.hour, minute: n.minute }, every: 'day', allowWhileIdle: true },
+      sound: null, actionTypeId: '', extra: null,
+    }))});
+  } catch (e) { console.warn('scheduleSupplements error:', e); }
+}
+
+async function cancelSupplements() {
+  try {
+    const P = await getPlugin();
+    if (!P) return;
+    await P.cancel({ notifications: SUPPL_NOTIFS.map(n => ({ id: n.id })) });
+  } catch {}
+}
+
+/* ── Hook principal ───────────────────────────────────────────────────── */
 export function useNotifications() {
   const [notifTime, setNotifTime] = useStorage(NOTIF_TIME_KEY, '09:00');
   const [notifEnabled, setNotifEnabled] = useStorage(NOTIF_ENABLED_KEY, false);
+  const [supplEnabled, setSupplEnabled] = useStorage(SUPPL_ENABLED_KEY, false);
   const [loading, setLoading] = useState(false);
 
   const enable = useCallback(async (time) => {
     setLoading(true);
     const granted = await requestPermission();
-    if (!granted) {
-      setLoading(false);
-      return false;
-    }
+    if (!granted) { setLoading(false); return false; }
     const [h, m] = time.split(':').map(Number);
     await scheduleDaily(h, m);
     setNotifTime(time);
@@ -91,5 +111,23 @@ export function useNotifications() {
     setNotifTime(time);
   }, [notifEnabled, setNotifTime]);
 
-  return { notifEnabled, notifTime, loading, enable, disable, update };
+  const enableSupplements = useCallback(async () => {
+    setLoading(true);
+    const granted = await requestPermission();
+    if (!granted) { setLoading(false); return false; }
+    await scheduleSupplements();
+    setSupplEnabled(true);
+    setLoading(false);
+    return true;
+  }, [setSupplEnabled]);
+
+  const disableSupplements = useCallback(async () => {
+    await cancelSupplements();
+    setSupplEnabled(false);
+  }, [setSupplEnabled]);
+
+  return {
+    notifEnabled, notifTime, loading, enable, disable, update,
+    supplEnabled, enableSupplements, disableSupplements,
+  };
 }

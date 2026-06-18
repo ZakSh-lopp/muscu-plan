@@ -78,7 +78,7 @@ function SessionSummary({ summary }) {
 
 // Modal parametres de notification
 function NotifSettingsModal({ onClose }) {
-  const { notifEnabled, notifTime, loading, enable, disable, update } = useNotifications();
+  const { notifEnabled, notifTime, loading, enable, disable, update, supplEnabled, enableSupplements, disableSupplements } = useNotifications();
   const [time, setTime] = useState(notifTime || '09:00');
   const [result, setResult] = useState(null);
 
@@ -92,6 +92,16 @@ function NotifSettingsModal({ onClose }) {
     }
   }
 
+  async function handleSupplToggle() {
+    if (supplEnabled) {
+      await disableSupplements();
+      setResult('Rappels supplements desactives');
+    } else {
+      const ok = await enableSupplements();
+      setResult(ok ? 'Rappels supplements actives (8h, 13h, 21h)' : 'Permission refusee');
+    }
+  }
+
   async function handleTimeChange(e) {
     setTime(e.target.value);
     if (notifEnabled) await update(e.target.value);
@@ -101,11 +111,11 @@ function NotifSettingsModal({ onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-handle" />
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 'var(--s4)' }}>&#128276; Rappel quotidien</div>
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 'var(--s4)', lineHeight: 1.6 }}>
-          Recois une notification chaque jour pour ne pas oublier ta seance.
-        </div>
-        <div style={{ marginBottom: 'var(--s4)' }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 'var(--s4)' }}>&#128276; Notifications</div>
+
+        {/* Seance */}
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Rappel seance</div>
+        <div style={{ marginBottom: 'var(--s3)' }}>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
             Heure du rappel
           </label>
@@ -116,17 +126,34 @@ function NotifSettingsModal({ onClose }) {
         <button onClick={handleToggle} disabled={loading} style={{
           width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r2)',
           background: notifEnabled ? 'var(--danger)' : 'var(--accent)',
-          color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 'var(--s3)',
+          color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 'var(--s4)',
           opacity: loading ? 0.7 : 1,
         }}>
-          {loading ? 'Chargement...' : notifEnabled ? 'Desactiver le rappel' : 'Activer le rappel'}
+          {loading ? 'Chargement...' : notifEnabled ? 'Desactiver le rappel seance' : 'Activer le rappel seance'}
         </button>
+
+        {/* Supplements */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--s3)', marginBottom: 'var(--s3)' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Rappels supplements</div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', lineHeight: 1.5 }}>
+            ☀️ 8h Matin · &#9728; 13h Midi · 🌙 21h Soir
+          </div>
+          <button onClick={handleSupplToggle} disabled={loading} style={{
+            width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r2)',
+            background: supplEnabled ? 'var(--danger)' : '#10b981',
+            color: 'white', fontWeight: 700, fontSize: 15,
+            opacity: loading ? 0.7 : 1,
+          }}>
+            {loading ? 'Chargement...' : supplEnabled ? 'Desactiver rappels supplements' : 'Activer rappels supplements'}
+          </button>
+        </div>
+
         {result && (
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center', padding: 'var(--s2)' }}>
             {result}
           </div>
         )}
-        <button className="btn-secondary" onClick={onClose} style={{ width: '100%' }}>Fermer</button>
+        <button className="btn-secondary" onClick={onClose} style={{ width: '100%', marginTop: 'var(--s2)' }}>Fermer</button>
       </div>
     </div>
   );
