@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create releases
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +34,8 @@ jobs:
 
       - name: Build web app
         run: npx vite@8 build
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
       - name: Capacitor sync
         run: npx cap sync android
@@ -52,9 +56,23 @@ jobs:
             -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
             --no-daemon
 
-      - name: Upload APK
+      - name: Rename APK
+        run: |
+          mv android/app/build/outputs/apk/release/app-release.apk \
+             android/app/build/outputs/apk/release/muscu-plan-v${{ github.run_number }}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: "Muscu Plan v${{ github.run_number }}"
+          body: "Build automatique du ${{ github.event.head_commit.timestamp }}"
+          files: android/app/build/outputs/apk/release/muscu-plan-v${{ github.run_number }}.apk
+          make_latest: true
+
+      - name: Upload APK artifact (backup)
         uses: actions/upload-artifact@v4
         with:
           name: muscu-plan-v${{ github.run_number }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/muscu-plan-v${{ github.run_number }}.apk
           retention-days: 30

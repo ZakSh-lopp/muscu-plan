@@ -142,7 +142,7 @@ export default function SessionView({ workout }) {
   const [selectedType, setSelectedTypeState] = useState(() => {
     try {
       const s = localStorage.getItem('muscu_active_workout_type');
-      return s || todayType;
+      return s || (todayType === 'Repos' ? 'FullA' : todayType);
     } catch { return todayType; }
   });
   function setSelectedType(t) {
@@ -197,28 +197,23 @@ export default function SessionView({ workout }) {
     restTimer.startRest(exercise.restSeconds || 90);
   }
 
-  if (isRestDay) {
-    return (
-      <div style={{ padding: 'var(--s4)', paddingBottom: 'max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 50px))' }}>
-        <CoachCard insights={insights} />
-        <div className="card" style={{ textAlign: 'center', padding: 'var(--s6)' }}>
-          <div style={{ fontSize: 48, marginBottom: 'var(--s3)' }}>&#128564;</div>
-          <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 'var(--s2)' }}>Jour de repos</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-            La recuperation fait partie de la progression. Profites-en pour manger et dormir !
-          </div>
-        </div>
-        <div style={{ marginTop: 'var(--s4)' }}><SupplementTracker /></div>
-        <div style={{ marginTop: 'var(--s4)' }}><WeightTracker /></div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ padding: 'var(--s4)', paddingBottom: 'max(calc(var(--tab-height) + env(safe-area-inset-bottom)), calc(var(--tab-height) + 50px))' }}>
 
       {/* Coach insights */}
       <CoachCard insights={insights} />
+
+      {/* Banniere jour de repos */}
+      {isRestDay && (
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', padding: 'var(--s3) var(--s4)', marginBottom: 'var(--s3)', background: 'var(--surface-2)', border: '1.5px solid var(--border)' }}>
+          <span style={{ fontSize: 28 }}>&#128564;</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Jour de repos</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Tu peux quand meme consulter ou faire une seance.</div>
+          </div>
+        </div>
+      )}
 
       {/* Selecteur Full A/B/C */}
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>

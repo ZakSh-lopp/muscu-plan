@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import TabMuscu from './components/TabMuscu/TabMuscu';
 import TabNutrition from './components/TabNutrition/TabNutrition';
 import TabCourses from './components/TabCourses/TabCourses';
 import Header from './components/Header';
+import UpdateBanner from './components/UpdateBanner';
 import { getProgramWeek, getTodayWorkoutType } from './hooks/useWorkout';
+import { useAppUpdate } from './hooks/useAppUpdate';
 
 const TABS = [
   { id: 'muscu',     label: 'Muscu',    icon: '🏋️' },
@@ -27,8 +29,10 @@ function PageWrapper({ children, tabId }) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('muscu');
+  const [updateDismissed, setUpdateDismissed] = useState(false);
   const week = getProgramWeek();
   const todayType = getTodayWorkoutType();
+  const update = useAppUpdate();
 
   function switchTab(id) {
     if (id !== activeTab) setActiveTab(id);
@@ -36,6 +40,10 @@ export default function App() {
 
   return (
     <div className="app-layout">
+      {!updateDismissed && (
+        <UpdateBanner update={update} onDismiss={() => setUpdateDismissed(true)} />
+      )}
+
       <Header week={week} todayType={todayType} activeTab={activeTab} />
 
       <main className="app-content">

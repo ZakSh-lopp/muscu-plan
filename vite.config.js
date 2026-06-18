@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __BUILD_NUMBER__: JSON.stringify(process.env.GITHUB_RUN_NUMBER || '0'),
+  },
   build: {
     outDir: 'dist',
     // Important pour Capacitor : pas de hash dans les noms de fichiers
