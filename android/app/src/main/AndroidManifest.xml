@@ -24,6 +24,25 @@
 
         </activity>
 
+        <!-- Foreground service for live workout lock-screen notification -->
+        <service
+            android:name=".WorkoutForegroundService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
+        <!-- Receives button taps and RemoteInput from the workout notification -->
+        <receiver
+            android:name=".WorkoutBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.zakaria.muscuplan.ACTION_SET_DONE" />
+                <action android:name="com.zakaria.muscuplan.ACTION_NEXT" />
+                <action android:name="com.zakaria.muscuplan.ACTION_SKIP_REST" />
+                <action android:name="com.zakaria.muscuplan.ACTION_INPUT_KG" />
+                <action android:name="com.zakaria.muscuplan.ACTION_INPUT_REPS" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -47,4 +66,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- APK install for OTA updates -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <!-- Foreground service for live workout notification -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 </manifest>

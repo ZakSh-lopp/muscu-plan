@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getExerciseFrames, getAltFrames } from '../../data/exerciseMedia';
+import { useWorkoutForeground } from '../../hooks/useWorkoutForeground';
 
 /* ─── Image animée ───────────────────────────────────────────────────── */
 function ExerciseImage({ exerciseId, exerciseName, swappedAlt, hasAlts, onCycleAlt, tip, showTip, onToggleTip }) {
@@ -64,6 +65,8 @@ function Circle({ value, sub, label, color, pulse, onClick }) {
     </div>
   );
 }
+
+/* ─── (useWorkoutNotification remplace par useWorkoutForeground) ─────── */
 
 /* ─── Pavé reps ──────────────────────────────────────────────────────── */
 function RepsPad({ value, onChange, onClose }) {
@@ -169,7 +172,6 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <ExerciseImage exerciseId={exercise.id} exerciseName={displayName} swappedAlt={swappedName} hasAlts={hasAlts} tip={activeTip} showTip={showTip} onCycleAlt={onCycleAlt} onToggleTip={() => setShowTip(v => !v)} />
 
-      {/* Info — flex:1 + minHeight:0 pour rester dans les limites sans scroll */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '10px var(--s4) 0' }}>
         <div style={{ flexShrink: 0, marginBottom: 8 }}>
           <div style={{ fontWeight: 800, fontSize: 17 }}>{displayName}</div>
@@ -224,7 +226,104 @@ function GuidedExercise({ exercise, swappedName, workout, sessionStarted, restTi
 /* ─── Composant principal — rendu via portal pour vrai plein écran ───── */
 export default function GuidedSessionView({ exercises, workout, sessionStarted, restTimer, onClose }) {
   const [currentIdx, setCurrentIdx] = useState(0);
+  const fg = useWorkoutForeground();
   const exercise = exercises[currentIdx];
+
+  // Refs — gardent les dernieres valeurs accessibles dans les callbacks natifs
+  const workoutRef   = useRef(workout);
+  const restTimerRef = useRef(restTimer);
+  const exerciseRef  = useRef(exercise);
+  useEffect(() => { workoutRef.current   = workout;   });
+  useEffect(() => { restTimerRef.current = restTimer; });
+  useEffect(() => { exerciseRef.current  = exercise;  }, [exercise]);
+
+  // Demarrer le foreground service au montage + cabler les listeners natifs
+  useEffect(() => {
+    if (!exercise) return;
+    const effId = workout.getEffectiveId ? workout.getEffectiveId(exercise.id) : exercise.id;
+    fg.start({
+      exerciseName:   workout.swappedExercises?.[exercise.id] || exercise.name,
+      exerciseNum:    1,
+      totalExercises: exercises.length,
+      setsDone:       0,
+      setsTotal:      exercise.sets,
+      weight:         workout.todaySession.weights[effId] || 0,
+      restDuration:   exercise.restSeconds || 90,
+    });
+
+    const removeListeners = fg.addListeners({
+      // Bouton Serie depuis la notif
+      setDone: () => {
+        const ex = exerciseRef.current;
+        const wk = workoutRef.current;
+        const rt = restTimerRef.current;
+        if (!ex || !wk) return;
+        const sets = wk.todaySession.sets || {};
+        const done = Array.from({ length: ex.sets }, (_, i) => !!sets[`${ex.id}_${i}`]).filter(Boolean).length;
+        if (done < ex.sets) {
+          wk.toggleSet(ex.id, done);
+          rt?.startRest?.(ex.restSeconds || 90);
+        }
+      },
+      // Bouton Suivant depuis la notif
+      nextExercise: () => {
+        setCurrentIdx(i => Math.min(i + 1, exercises.length - 1));
+      },
+      // Bouton Passer repos depuis la notif
+      restSkipped: () => { restTimerRef.current?.skipRest?.(); },
+      // Timer de repos arrive a 0 cote natif
+      restEnded:   () => { restTimerRef.current?.skipRest?.(); },
+      // RemoteInput "Kg"
+      weightChanged: ({ weight }) => {
+        const ex = exerciseRef.current;
+        const wk = workoutRef.current;
+        if (!ex || !wk) return;
+        const effId = wk.getEffectiveId ? wk.getEffectiveId(ex.id) : ex.id;
+        wk.setWeight(effId, weight);
+      },
+      // RemoteInput "Reps"
+      repsChanged: ({ reps }) => {
+        const ex = exerciseRef.current;
+        const wk = workoutRef.current;
+        if (!ex || !wk) return;
+        const effId = wk.getEffectiveId ? wk.getEffectiveId(ex.id) : ex.id;
+        wk.setRepsActual?.(effId, reps);
+      },
+    });
+
+    return () => {
+      removeListeners();
+      fg.stop();
+    };
+  }, []); // mount / unmount uniquement
+
+  // Mise a jour de la notif quand l'exo ou les series changent
+  useEffect(() => {
+    if (!exercise) return;
+    const effId = workout.getEffectiveId ? workout.getEffectiveId(exercise.id) : exercise.id;
+    const w    = workout.todaySession.weights[effId] || 0;
+    const sets = workout.todaySession.sets || {};
+    const done = Array.from({ length: exercise.sets }, (_, i) => !!sets[`${exercise.id}_${i}`]).filter(Boolean).length;
+    fg.update({
+      exerciseName:   workout.swappedExercises?.[exercise.id] || exercise.name,
+      exerciseNum:    currentIdx + 1,
+      totalExercises: exercises.length,
+      setsDone:       done,
+      setsTotal:      exercise.sets,
+      weight:         w,
+      restDuration:   exercise.restSeconds || 90,
+    });
+  }, [currentIdx, JSON.stringify(workout.todaySession.sets), JSON.stringify(workout.todaySession.weights)]);
+
+  // Synchro repos natif <-> JS
+  useEffect(() => {
+    if (restTimer.active) {
+      fg.startRest(exercise?.restSeconds || 90);
+    } else {
+      fg.stopRest();
+    }
+  }, [restTimer.active]);
+
   if (!exercise) return null;
 
   const swappedName = workout.swappedExercises?.[exercise.id] || null;
@@ -247,15 +346,15 @@ export default function GuidedSessionView({ exercises, workout, sessionStarted, 
     <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden', touchAction: 'none' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--s3) var(--s4)', paddingTop: 'calc(var(--s3) + env(safe-area-inset-top))', background: 'var(--surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        <button onClick={onClose} style={{ fontSize: 22, color: 'var(--text-secondary)', background: 'none', padding: '0 6px' }}>←</button>
+        <button onClick={onClose} style={{ fontSize: 22, color: 'var(--text-secondary)', background: 'none', padding: '0 6px' }}>{'<'}</button>
         <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', textAlign: 'center', flex: 1, padding: '0 8px' }}>
-          {currentIdx + 1}/{exercises.length} · {exercise.muscle}
+          {currentIdx + 1}/{exercises.length} {exercise.muscle}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {currentIdx > 0 && <button onClick={() => setCurrentIdx(i => i - 1)} style={{ fontSize: 13, color: 'var(--text-muted)', background: 'none' }}>◀ Préc.</button>}
+          {currentIdx > 0 && <button onClick={() => setCurrentIdx(i => i - 1)} style={{ fontSize: 13, color: 'var(--text-muted)', background: 'none' }}>Prec.</button>}
           {isLast
-            ? <button onClick={onClose} style={{ fontSize: 13, color: 'var(--success)', fontWeight: 700, background: 'none' }}>Fin 🏁</button>
-            : <button onClick={() => setCurrentIdx(i => i + 1)} style={{ fontSize: 13, fontWeight: allSetsOk ? 700 : 400, color: allSetsOk ? 'var(--accent)' : 'var(--text-muted)', background: 'none' }}>Suivant ▶</button>
+            ? <button onClick={onClose} style={{ fontSize: 13, color: 'var(--success)', fontWeight: 700, background: 'none' }}>Fin</button>
+            : <button onClick={() => setCurrentIdx(i => i + 1)} style={{ fontSize: 13, fontWeight: allSetsOk ? 700 : 400, color: allSetsOk ? 'var(--accent)' : 'var(--text-muted)', background: 'none' }}>Suivant</button>
           }
         </div>
       </div>
