@@ -15,7 +15,7 @@ import androidx.core.app.RemoteInput;
 
 public class WorkoutForegroundService extends Service {
 
-    public static final String CHANNEL_ID    = "workout_fg_channel";
+    public static final String CHANNEL_ID    = "workout_fg_channel_v2";
     public static final int    NOTIF_ID      = 5001;
     public static final String KEY_KG        = "key_kg";
     public static final String KEY_REPS      = "key_reps";
@@ -90,10 +90,13 @@ public class WorkoutForegroundService extends Service {
 
     private void createChannel() {
         NotificationChannel ch = new NotificationChannel(
-            CHANNEL_ID, "Séance en cours", NotificationManager.IMPORTANCE_LOW
+            CHANNEL_ID, "Séance en cours", NotificationManager.IMPORTANCE_DEFAULT
         );
         ch.setDescription("Suivi temps réel de la séance");
         ch.setShowBadge(false);
+        ch.setSound(null, null);                          // silencieux
+        ch.enableVibration(false);                        // pas de vibration
+        ch.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC); // visible sur lock screen
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (nm != null) nm.createNotificationChannel(ch);
     }
