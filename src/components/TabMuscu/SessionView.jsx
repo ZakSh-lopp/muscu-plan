@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { WORKOUT_TYPES } from '../../data/workout';
 import { useSessionTimer, useRestTimer } from '../../hooks/useTimer';
 import { getTodayWorkoutType } from '../../hooks/useWorkout';
 import { useCoach } from '../../hooks/useCoach';
 import { useNotifications, sendTestNotification } from '../../hooks/useNotifications';
 import { useStorage, STORAGE_KEYS } from '../../hooks/useStorage';
+import { useWorkoutForeground } from '../../hooks/useWorkoutForeground';
 import ExerciseCard from './ExerciseCard';
 import SupplementTracker from './SupplementTracker';
 import WeightTracker from './WeightTracker';
@@ -138,7 +139,7 @@ function NotifSettingsModal({ onClose }) {
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--s3)', marginBottom: 'var(--s3)' }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Rappels supplements</div>
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', lineHeight: 1.5 }}>
-            ☀️ 8h Matin · &#9728; 13h Midi · 🌙 21h Soir
+            8h Matin · 13h Midi · 21h Soir
           </div>
           <button onClick={handleSupplToggle} disabled={loading} style={{
             width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r2)',
@@ -159,11 +160,11 @@ function NotifSettingsModal({ onClose }) {
           onClick={async () => {
             setResult('Envoi dans 5 secondes...');
             const r = await sendTestNotification();
-            setResult(r === 'ok' ? '✓ Notif test envoyee ! Verif dans 5s' : r);
+            setResult(r === 'ok' ? 'Notif test envoyee ! Verif dans 5s' : r);
           }}
           style={{ width: '100%', padding: 'var(--s2)', borderRadius: 'var(--r2)', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: 13, marginBottom: 'var(--s2)' }}
         >
-          🔔 Tester les notifs (dans 5s)
+          Tester les notifs (dans 5s)
         </button>
         <button className="btn-secondary" onClick={onClose} style={{ width: '100%' }}>Fermer</button>
       </div>
@@ -173,6 +174,7 @@ function NotifSettingsModal({ onClose }) {
 
 export default function SessionView({ workout }) {
   const todayType = getTodayWorkoutType();
+  const fg = useWorkoutForeground();
 
   // Timer AVANT les useState — on s'en sert pour initialiser sessionStarted
   const sessionTimer = useSessionTimer();
@@ -189,14 +191,23 @@ export default function SessionView({ workout }) {
     try { localStorage.setItem('muscu_active_workout_type', t); } catch {}
   }
 
-  // Init depuis le timer (SESSION_START_TS en localStorage) → survit au kill du WebView
+  // Init depuis le timer (SESSION_START_TS en localStorage) -> survit au kill du WebView
   const [sessionStarted, setSessionStarted] = useState(sessionTimer.running);
   const [sessionNote, setSessionNote] = useState('');
   const [showFinish, setShowFinish] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showGuided, setShowGuided] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [activeExercise, setActiveExercise] = useState(null); // dernier exo interagi
   const restTimer = useRestTimer();
+
+  // Refs pour callbacks natifs (evite closures perimees)
+  const workoutRef   = useRef(workout);
+  const restTimerRef = useRef(restTimer);
+  const activeExRef  = useRef(activeExercise);
+  useEffect(() => { workoutRef.current   = workout; });
+  useEffect(() => { restTimerRef.current = restTimer; });
+  useEffect(() => { activeExRef.current  = activeExercise; }, [activeExercise]);
 
   // Hydratation pour le coach
   const [hydration] = useStorage(STORAGE_KEYS.HYDRATION_TODAY, 0);
@@ -218,6 +229,90 @@ export default function SessionView({ workout }) {
     currentWorkout.exercises, workout.todaySession, sessionTimer.formatted, workout.getPR, workout.getEffectiveId
   ) : null;
 
+  // ── Foreground service (mode standard) ──────────────────────────────────
+  // Le mode guide gere lui-meme le service quand showGuided=true.
+  useEffect(() => {
+    if (!sessionStarted || showGuided) {
+      if (!sessionStarted) fg.stop();
+      return;
+    }
+
+    const exList = WORKOUT_TYPES[selectedType]?.exercises?.filter(
+      ex => !workout.disabledExercises.includes(ex.id)
+    ) || [];
+    const ex = activeExercise || exList[0];
+    const effId = ex ? (workout.getEffectiveId ? workout.getEffectiveId(ex.id) : ex.id) : null;
+    const sets = workout.todaySession.sets || {};
+    const done = ex
+      ? Array.from({ length: ex.sets }, (_, i) => !!sets[`${ex.id}_${i}`]).filter(Boolean).length
+      : 0;
+
+    fg.start({
+      exerciseName:   ex ? (workout.swappedExercises?.[ex.id] || ex.name) : currentWorkout.label,
+      exerciseNum:    ex ? (exList.indexOf(ex) + 1) : 1,
+      totalExercises: exList.length,
+      setsDone:       done,
+      setsTotal:      ex?.sets || 0,
+      weight:         effId ? (workout.todaySession.weights[effId] || 0) : 0,
+      restDuration:   ex?.restSeconds || 90,
+    });
+
+    const removeListeners = fg.addListeners({
+      setDone: () => {
+        const wk = workoutRef.current;
+        const rt = restTimerRef.current;
+        const cur = activeExRef.current || (WORKOUT_TYPES[selectedType]?.exercises?.[0]);
+        if (!cur || !wk) return;
+        const s = wk.todaySession.sets || {};
+        const d = Array.from({ length: cur.sets }, (_, i) => !!s[`${cur.id}_${i}`]).filter(Boolean).length;
+        if (d < cur.sets) { wk.toggleSet(cur.id, d); rt?.startRest?.(cur.restSeconds || 90); }
+      },
+      restSkipped: () => { restTimerRef.current?.skipRest?.(); },
+      restEnded:   () => { restTimerRef.current?.skipRest?.(); },
+      weightChanged: ({ weight }) => {
+        const wk = workoutRef.current;
+        const cur = activeExRef.current;
+        if (!cur || !wk) return;
+        const eid = wk.getEffectiveId ? wk.getEffectiveId(cur.id) : cur.id;
+        wk.setWeight(eid, weight);
+      },
+      repsChanged: ({ reps }) => {
+        const wk = workoutRef.current;
+        const cur = activeExRef.current;
+        if (!cur || !wk) return;
+        const eid = wk.getEffectiveId ? wk.getEffectiveId(cur.id) : cur.id;
+        wk.setRepsActual?.(eid, reps);
+      },
+    });
+
+    return () => removeListeners();
+  }, [sessionStarted, showGuided, selectedType]);
+
+  // Mise a jour notif quand l'exercice actif ou les series changent (mode standard)
+  useEffect(() => {
+    if (!sessionStarted || showGuided || !activeExercise) return;
+    const effId = workout.getEffectiveId ? workout.getEffectiveId(activeExercise.id) : activeExercise.id;
+    const sets = workout.todaySession.sets || {};
+    const done = Array.from({ length: activeExercise.sets }, (_, i) => !!sets[`${activeExercise.id}_${i}`]).filter(Boolean).length;
+    const exList = WORKOUT_TYPES[selectedType]?.exercises?.filter(ex => !workout.disabledExercises.includes(ex.id)) || [];
+    fg.update({
+      exerciseName:   workout.swappedExercises?.[activeExercise.id] || activeExercise.name,
+      exerciseNum:    exList.indexOf(activeExercise) + 1,
+      totalExercises: exList.length,
+      setsDone:       done,
+      setsTotal:      activeExercise.sets,
+      weight:         workout.todaySession.weights[effId] || 0,
+      restDuration:   activeExercise.restSeconds || 90,
+    });
+  }, [activeExercise, JSON.stringify(workout.todaySession.sets), JSON.stringify(workout.todaySession.weights)]);
+
+  // Synchro repos -> service natif (mode standard)
+  useEffect(() => {
+    if (!sessionStarted || showGuided) return;
+    if (restTimer.active) fg.startRest(activeExercise?.restSeconds || 90);
+    else fg.stopRest();
+  }, [restTimer.active, sessionStarted, showGuided]);
+
   function handleStart() {
     setSessionStarted(true);
     sessionTimer.start();
@@ -233,6 +328,7 @@ export default function SessionView({ workout }) {
   }
 
   function handleSetCheck(exercise) {
+    setActiveExercise(exercise);
     restTimer.startRest(exercise.restSeconds || 90);
   }
 
