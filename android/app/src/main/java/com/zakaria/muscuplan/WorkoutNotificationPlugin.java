@@ -75,6 +75,14 @@ public class WorkoutNotificationPlugin extends Plugin {
         call.resolve();
     }
 
+    /**
+     * Pont public vers notifyListeners (qui est protected dans Plugin).
+     * Appelé par WorkoutBroadcastReceiver et WorkoutForegroundService.
+     */
+    public void fireEvent(String event, JSObject data) {
+        notifyListeners(event, data);
+    }
+
     // --- helpers ---
 
     private void applyExerciseOptions(PluginCall call) {

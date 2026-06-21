@@ -47,7 +47,7 @@ public class WorkoutForegroundService extends Service {
                 if (restSeconds == 0) {
                     isResting = false;
                     if (WorkoutNotificationPlugin.instance != null) {
-                        WorkoutNotificationPlugin.instance.notifyListeners(
+                        WorkoutNotificationPlugin.instance.fireEvent(
                             "restEnded", new com.getcapacitor.JSObject()
                         );
                     }

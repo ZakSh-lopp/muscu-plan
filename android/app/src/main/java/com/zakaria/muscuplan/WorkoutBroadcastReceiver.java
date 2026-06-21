@@ -31,12 +31,12 @@ public class WorkoutBroadcastReceiver extends BroadcastReceiver {
                 if (WorkoutForegroundService.instance != null) {
                     WorkoutForegroundService.instance.updateNotification();
                 }
-                if (plugin != null) plugin.notifyListeners("setDone", new JSObject());
+                if (plugin != null) plugin.fireEvent("setDone", new JSObject());
                 break;
             }
 
             case WorkoutForegroundService.ACTION_NEXT: {
-                if (plugin != null) plugin.notifyListeners("nextExercise", new JSObject());
+                if (plugin != null) plugin.fireEvent("nextExercise", new JSObject());
                 break;
             }
 
@@ -46,7 +46,7 @@ public class WorkoutBroadcastReceiver extends BroadcastReceiver {
                 if (WorkoutForegroundService.instance != null) {
                     WorkoutForegroundService.instance.updateNotification();
                 }
-                if (plugin != null) plugin.notifyListeners("restSkipped", new JSObject());
+                if (plugin != null) plugin.fireEvent("restSkipped", new JSObject());
                 break;
             }
 
@@ -65,7 +65,7 @@ public class WorkoutBroadcastReceiver extends BroadcastReceiver {
                     if (plugin != null) {
                         JSObject data = new JSObject();
                         data.put("weight", kg);
-                        plugin.notifyListeners("weightChanged", data);
+                        plugin.fireEvent("weightChanged", data);
                     }
                 } catch (NumberFormatException ignored) {}
                 break;
@@ -81,7 +81,7 @@ public class WorkoutBroadcastReceiver extends BroadcastReceiver {
                     if (plugin != null) {
                         JSObject data = new JSObject();
                         data.put("reps", reps);
-                        plugin.notifyListeners("repsChanged", data);
+                        plugin.fireEvent("repsChanged", data);
                     }
                 } catch (NumberFormatException ignored) {}
                 break;
